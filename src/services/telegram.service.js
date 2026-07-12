@@ -23,6 +23,21 @@ async function withRetry(fn, maxRetries = 3) {
 
 async function safeReply(chatId, text) {
   try {
+    // Handle dashboard webapp button
+    if (text.startsWith('__DASHBOARD_WEBAPP__')) {
+      const url = text.slice('__DASHBOARD_WEBAPP__'.length);
+      await withRetry(() =>
+        bot.sendMessage(chatId, '📊 *Dashboard Keuangan*\n\nKlik tombol di bawah untuk melihat ringkasan lengkap dengan grafik:', {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: '📊 Buka Dashboard', web_app: { url } }],
+            ],
+          },
+        })
+      );
+      return;
+    }
     await withRetry(() => bot.sendMessage(chatId, text, { parse_mode: 'Markdown' }));
   } catch (err) {
     logger.error({ err, chatId }, 'Gagal kirim reply');

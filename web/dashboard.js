@@ -2,10 +2,23 @@
   const params = new URLSearchParams(window.location.search);
   const token = params.get('t');
 
+  // Telegram WebApp detection
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) {
+    tg.ready();
+    document.body.classList.add('tg-webapp');
+  }
+
   if (!token) {
     showError();
     return;
   }
+
+  // State
+  let allTransactions = [];
+  let filteredTransactions = [];
+  let currentPage = 1;
+  const PAGE_SIZE = 10;
 
   function showError() {
     document.getElementById('loading').style.display = 'none';
@@ -55,7 +68,6 @@
     document.getElementById('month-balance').textContent = formatRupiah(s.monthBalance);
     document.getElementById('month-tx-count').textContent = s.monthTxCount + ' transaksi bulan ini';
 
-    // Apply color for month balance
     const monthBalEl = document.getElementById('month-balance');
     monthBalEl.className = 'card-value ' + (s.monthBalance >= 0 ? 'green' : 'red');
 
@@ -63,7 +75,13 @@
     renderCategoryChart(data.byCategory);
     renderDailyChart(data.byDay);
     renderBudgets(data.budgets);
-    renderTransactions(data.recentTransactions);
+
+    // Store transactions and set up search + pagination
+    allTransactions = data.recentTransactions || [];
+    filteredTransactions = [...allTransactions];
+    currentPage = 1;
+    renderTxTable();
+    setupSearch();
   }
 
   function renderMonthlyChart(byMonth) {
@@ -111,14 +129,10 @@
         scales: {
           y: {
             beginAtZero: true,
-            ticks: {
-              callback: (v) => formatShort(v),
-            },
+            ticks: { callback: (v) => formatShort(v) },
             grid: { color: '#f3f4f6' },
           },
-          x: {
-            grid: { display: false },
-          },
+          x: { grid: { display: false } },
         },
       },
     });
@@ -140,23 +154,14 @@
       type: 'doughnut',
       data: {
         labels,
-        datasets: [
-          {
-            data: values,
-            backgroundColor: colors.slice(0, entries.length),
-            borderWidth: 0,
-          },
-        ],
+        datasets: [{ data: values, backgroundColor: colors.slice(0, entries.length), borderWidth: 0 }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: true,
         cutout: '65%',
         plugins: {
-          legend: {
-            position: 'bottom',
-            labels: { usePointStyle: true, padding: 12, font: { size: 12 } },
-          },
+          legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, font: { size: 12 } } },
           tooltip: {
             callbacks: {
               label: (ctx) => {
@@ -173,7 +178,6 @@
 
   function renderDailyChart(byDay) {
     const days = Object.keys(byDay).sort();
-    // Last 30 days
     const last30 = days.slice(-30);
     const expenseData = last30.map((d) => byDay[d].expense);
     const labels = last30.map((d) => {
@@ -191,40 +195,27 @@
       type: 'line',
       data: {
         labels,
-        datasets: [
-          {
-            label: 'Pengeluaran',
-            data: expenseData,
-            borderColor: '#ef4444',
-            backgroundColor: 'rgba(239,68,68,0.08)',
-            fill: true,
-            tension: 0.35,
-            pointRadius: 3,
-            pointBackgroundColor: '#ef4444',
-          },
-        ],
+        datasets: [{
+          label: 'Pengeluaran',
+          data: expenseData,
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239,68,68,0.08)',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 3,
+          pointBackgroundColor: '#ef4444',
+        }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: true,
         plugins: {
           legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => formatRupiah(ctx.parsed.y),
-            },
-          },
+          tooltip: { callbacks: { label: (ctx) => formatRupiah(ctx.parsed.y) } },
         },
         scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { callback: (v) => formatShort(v) },
-            grid: { color: '#f3f4f6' },
-          },
-          x: {
-            grid: { display: false },
-            ticks: { maxRotation: 45, font: { size: 11 } },
-          },
+          y: { beginAtZero: true, ticks: { callback: (v) => formatShort(v) }, grid: { color: '#f3f4f6' } },
+          x: { grid: { display: false }, ticks: { maxRotation: 45, font: { size: 11 } } },
         },
       },
     });
@@ -253,14 +244,52 @@
     }).join('');
   }
 
-  function renderTransactions(txs) {
+  // ===== Transaction Table with Search + Pagination =====
+
+  function setupSearch() {
+    const input = document.getElementById('tx-search');
+    if (!input) return;
+    input.addEventListener('input', function () {
+      const q = this.value.toLowerCase().trim();
+      if (!q) {
+        filteredTransactions = [...allTransactions];
+      } else {
+        filteredTransactions = allTransactions.filter((t) => {
+          return (
+            t.date.toLowerCase().includes(q) ||
+            t.item.toLowerCase().includes(q) ||
+            t.category.toLowerCase().includes(q) ||
+            (t.type === 'income' ? 'pemasukan' : 'pengeluaran').includes(q) ||
+            formatRupiah(t.amount).toLowerCase().includes(q)
+          );
+        });
+      }
+      currentPage = 1;
+      renderTxTable();
+    });
+  }
+
+  function renderTxTable() {
     const tbody = document.getElementById('tx-body');
-    if (!txs || txs.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:24px">Belum ada transaksi</td></tr>';
-      return;
+    const emptyEl = document.getElementById('tx-empty');
+    const tableEl = tbody.closest('table');
+    const total = filteredTransactions.length;
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+
+    if (currentPage > totalPages) currentPage = totalPages || 1;
+
+    const startIdx = (currentPage - 1) * PAGE_SIZE;
+    const pageItems = filteredTransactions.slice(startIdx, startIdx + PAGE_SIZE);
+
+    if (total === 0) {
+      tableEl.style.display = 'none';
+      emptyEl.style.display = 'block';
+    } else {
+      tableEl.style.display = '';
+      emptyEl.style.display = 'none';
     }
 
-    tbody.innerHTML = txs.map((t) => {
+    tbody.innerHTML = pageItems.map((t) => {
       const isIncome = t.type === 'income';
       return `
         <tr>
@@ -271,6 +300,54 @@
           <td><span class="tx-amount ${isIncome ? 'income' : 'expense'}">${isIncome ? '+' : '-'}${formatRupiah(t.amount)}</span></td>
         </tr>`;
     }).join('');
+
+    renderPagination(totalPages, total, startIdx, pageItems.length);
+  }
+
+  function renderPagination(totalPages, total, startIdx, pageCount) {
+    const container = document.getElementById('tx-pagination');
+    const infoEl = document.getElementById('tx-info');
+
+    if (total === 0) {
+      container.innerHTML = '';
+      infoEl.textContent = '';
+      return;
+    }
+
+    const from = startIdx + 1;
+    const to = startIdx + pageCount;
+    infoEl.textContent = `Menampilkan ${from}-${to} dari ${total} transaksi`;
+
+    if (totalPages <= 1) {
+      container.innerHTML = '';
+      return;
+    }
+
+    let html = '';
+    html += `<button class="page-btn" data-page="${currentPage - 1}" ${currentPage <= 1 ? 'disabled' : ''}>&laquo;</button>`;
+
+    // Show max 5 page buttons
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, startPage + 4);
+    if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+    for (let i = startPage; i <= endPage; i++) {
+      html += `<button class="page-btn${i === currentPage ? ' active' : ''}" data-page="${i}">${i}</button>`;
+    }
+
+    html += `<button class="page-btn" data-page="${currentPage + 1}" ${currentPage >= totalPages ? 'disabled' : ''}>&raquo;</button>`;
+
+    container.innerHTML = html;
+
+    container.querySelectorAll('.page-btn').forEach((btn) => {
+      btn.addEventListener('click', function () {
+        const page = parseInt(this.dataset.page, 10);
+        if (page >= 1 && page <= totalPages) {
+          currentPage = page;
+          renderTxTable();
+        }
+      });
+    });
   }
 
   init();

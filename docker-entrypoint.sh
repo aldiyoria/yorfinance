@@ -10,7 +10,10 @@ until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -q 2>/dev/null; do
 done
 echo "PostgreSQL is ready."
 
-# Run Prisma migrations
+# Run Prisma generate + migrations
+echo "Generating Prisma Client..."
+npx prisma generate
+
 echo "Running database migrations..."
 npx prisma migrate deploy
 

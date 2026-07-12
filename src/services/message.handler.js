@@ -543,12 +543,7 @@ async function handleIncomingMessage({ chatId, text, media }) {
       const token = await ensureDashboardToken(user);
       const baseUrl = env.dashboardBaseUrl;
       const url = `${baseUrl}/web/dashboard.html?t=${token}`;
-      return (
-        '📊 *Dashboard Keuangan*\n\n' +
-        'Buka link di bawah untuk melihat dashboard lengkap dengan grafik dan visualisasi:\n\n' +
-        `${url}\n\n` +
-        '💡 Dashboard menampilkan ringkasan, grafik pengeluaran, dan tren keuangan Anda.'
-      );
+      return `__DASHBOARD_WEBAPP__${url}`;
     }
     if (helpReply === '__DELETE__') {
       const sheetName = await ensureSheet(user);
