@@ -2,12 +2,13 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Dashboard — YorFinance</title>
   <link rel="icon" type="image/png" href="/public/asset/img/logo.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <link rel="stylesheet" href="/web/dashboard.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
 
@@ -44,6 +45,27 @@
         <span class="generated-at" id="generated-at"></span>
       </div>
     </header>
+
+    <!-- Period Filter -->
+    <div class="period-filter">
+      <label>Periode:</label>
+      <select id="filter-month" class="filter-select">
+        <option value="all">Semua Bulan</option>
+        <option value="0">Januari</option>
+        <option value="1">Februari</option>
+        <option value="2">Maret</option>
+        <option value="3">April</option>
+        <option value="4">Mei</option>
+        <option value="5">Juni</option>
+        <option value="6">Juli</option>
+        <option value="7">Agustus</option>
+        <option value="8">September</option>
+        <option value="9">Oktober</option>
+        <option value="10">November</option>
+        <option value="11">Desember</option>
+      </select>
+      <select id="filter-year" class="filter-select"></select>
+    </div>
 
     <!-- Summary Cards -->
     <section class="summary-cards">
