@@ -1,0 +1,57 @@
+services:
+  # ===== PostgreSQL Database =====
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: yorfinance
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-yorfinance_secret}
+      POSTGRES_DB: mankeu
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yorfinance -d mankeu"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - backend
+
+  # ===== YorFinance Bot =====
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: postgresql://yorfinance:${DB_PASSWORD:-yorfinance_secret}@db:5432/mankeu?schema=public
+      TZ: Asia/Jakarta
+    env_file:
+      - .env
+    volumes:
+      - ./credentials:/app/credentials:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - backend
+
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  backend:
+    driver: bridge

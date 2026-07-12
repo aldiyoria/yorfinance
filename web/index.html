@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YorFinance — Catat Keuangan via Telegram</title>
+  <meta name="description" content="Bot Telegram pintar untuk mencatat pemasukan & pengeluaran otomatis. Kirim teks atau foto struk, data langsung tercatat di Google Sheets.">
+  <link rel="icon" type="image/png" href="/public/asset/img/logo.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar" id="navbar">
+    <div class="container nav-container">
+      <a href="#" class="logo">
+        <span class="logo-icon">&#9670;</span> YorFinance
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#features">Fitur</a></li>
+        <li><a href="#how">Cara Kerja</a></li>
+        <li><a href="#pricing">Harga</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="history.html">Status Bayar</a></li>
+      </ul>
+      <a href="checkout.html" class="btn btn-primary btn-sm">Mulai Sekarang</a>
+      <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero" id="hero">
+    <div class="container hero-container">
+      <div class="hero-content">
+        <h1>Uang Gajian Habis<br>Sebelum <span class="highlight">Tengah Bulan</span>?</h1>
+        <p class="hero-desc">
+          Kamu gak sendirian. Banyak orang merasa uangnya hilang begitu saja — gak tau keluar buat apa, gak tau habis di mana. Tanpa catatan, keuangan jadi teka-teki setiap bulan.
+        </p>
+        <div class="hero-actions">
+          <a href="checkout.html" class="btn btn-primary btn-lg">Mulai Kelola Uang</a>
+          <a href="#masalah" class="btn btn-ghost btn-lg">Kenali Masalahnya</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="phone-mockup">
+          <div class="phone-screen">
+            <div class="chat-header">
+              <div class="chat-avatar">YF</div>
+              <div class="chat-info">
+                <strong>YorFinance Bot</strong>
+                <small>online</small>
+              </div>
+            </div>
+            <div class="chat-body" id="heroChatBody">
+
+              <!-- Screen 1: Chat transaksi -->
+              <div class="hero-screen active" id="screen-chat">
+                <div class="msg msg-user msg-animate">beli kopi 25rb</div>
+                <div class="msg msg-bot msg-animate delay-1">
+                  <span class="msg-label">YorFinance</span>
+                  &#10003; Tercatat!<br>
+                  &bull; Pengeluaran<br>
+                  &bull; Rp25.000<br>
+                  &bull; Makanan &amp; Minuman<br>
+                  &bull; Kopi
+                </div>
+                <div class="msg msg-user msg-animate delay-2">gaji masuk 8jt</div>
+                <div class="msg msg-bot msg-animate delay-3">
+                  <span class="msg-label">YorFinance</span>
+                  &#10003; Tercatat!<br>
+                  &bull; Pemasukan<br>
+                  &bull; Rp8.000.000<br>
+                  &bull; Gaji
+                </div>
+              </div>
+
+              <!-- Screen 2: Rekap bulanan (PLING PROMINENT) -->
+              <div class="hero-screen" id="screen-rekap">
+                <div class="msg msg-user msg-animate">/rekap</div>
+                <div class="msg msg-bot msg-recap msg-animate delay-1">
+                  <span class="msg-label">YorFinance</span>
+                  &#128202; <strong>Rekap Juli 2026</strong><br><br>
+                  &#128176; <strong>Ringkasan Utama</strong><br>
+                  &bull; Total Pemasukan: <strong>Rp8.000.000</strong><br>
+                  &bull; Total Pengeluaran: <strong>Rp3.450.000</strong><br>
+                  &bull; Selisih: <strong>+Rp4.550.000</strong> &#10004;<br>
+                  &bull; Total Transaksi: <strong>28 kali</strong><br><br>
+                  &#128194; <strong>Pengeluaran per Kategori</strong><br>
+                  &#128308; Makanan: Rp1.200.000 (35%)<br>
+                  &#128992; Transportasi: Rp850.000 (25%)<br>
+                  &#128993; Belanja: Rp600.000 (17%)<br>
+                  &#128994; Hiburan: Rp400.000 (12%)<br>
+                  &#128994; Lainnya: Rp400.000 (11%)<br><br>
+                  &#127942; <strong>Kategori Tertinggi:</strong> Makanan — Rp1.200.000<br><br>
+                  &#128161; <strong>Insight</strong><br>
+                  &#10004; Rasio tabungan Anda sangat baik (&gt;30%)!
+                </div>
+              </div>
+
+              <!-- Screen 3: Rekap harian -->
+              <div class="hero-screen" id="screen-hari">
+                <div class="msg msg-user msg-animate">/hari</div>
+                <div class="msg msg-bot msg-animate delay-1">
+                  <span class="msg-label">YorFinance</span>
+                  &#128203; <strong>Rekap 12 Juli 2026</strong><br><br>
+                  &#128308; <strong>Pengeluaran (4 transaksi)</strong><br><br>
+                  &bull; 2026-07-12 — Kopi Kenihan<br>
+                  &nbsp;&nbsp;Rp25.000<br>
+                  &bull; 2026-07-12 — Grab to Office<br>
+                  &nbsp;&nbsp;Rp35.000<br>
+                  &bull; 2026-07-12 — Makan Siang<br>
+                  &nbsp;&nbsp;Rp45.000<br><br>
+                  <strong>Total Pengeluaran: Rp105.000</strong><br><br>
+                  &#128994; <strong>Pemasukan (1 transaksi)</strong><br><br>
+                  &bull; 2026-07-12 — Freelance<br>
+                  &nbsp;&nbsp;Rp500.000<br><br>
+                  <strong>Total Pemasukan: Rp500.000</strong><br><br>
+                  &#128202; <strong>Selisih: +Rp395.000</strong> &#10004;
+                </div>
+              </div>
+
+              <!-- Screen 4: Budget -->
+              <div class="hero-screen" id="screen-budget">
+                <div class="msg msg-user msg-animate">/budget</div>
+                <div class="msg msg-bot msg-animate delay-1">
+                  <span class="msg-label">YorFinance</span>
+                  &#128176; <strong>Status Budget Juli 2026</strong><br><br>
+                  &#128308; Makanan &amp; Minuman<br>
+                  &bull; Budget: Rp1.500.000<br>
+                  &bull; Terpakai: Rp1.200.000<br>
+                  &bull; Sisa: <strong>Rp300.000</strong><br>
+                  &#9888;&#65039; 80% terpakai — waspada!<br><br>
+                  &#128992; Transportasi<br>
+                  &bull; Budget: Rp800.000<br>
+                  &bull; Terpakai: Rp850.000<br>
+                  &bull; Sisa: <strong style="color:#EF4444">-Rp50.000</strong><br>
+                  &#128680; Over budget!<br><br>
+                  &#128994; Hiburan<br>
+                  &bull; Budget: Rp500.000<br>
+                  &bull; Terpakai: Rp400.000<br>
+                  &bull; Sisa: <strong style="color:#10B981">Rp100.000</strong><br>
+                  &#10004; Aman
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Screen indicator dots -->
+            <div class="screen-dots">
+              <span class="dot active" data-screen="0"></span>
+              <span class="dot" data-screen="1"></span>
+              <span class="dot" data-screen="2"></span>
+              <span class="dot" data-screen="3"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pain Points -->
+  <section class="pain-points" id="masalah">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge">Kamu Pasti Pernah Ngalamini</span>
+        <h2>Keluh Kesah Soal Uang<br>Yang Kamu Rasain Setiap Bulan</h2>
+      </div>
+      <div class="pain-grid">
+        <div class="pain-card">
+          <div class="pain-icon">&#128176;</div>
+          <h3>"Baru tanggal 10, uang udah habis..."</h3>
+          <p>Gajian baru beberapa hari, tapi saldo udah menipis. Gak tau uangnya lari ke mana aja.</p>
+        </div>
+        <div class="pain-card">
+          <div class="pain-icon">&#128528;</div>
+          <h3>"Bingung uang habis buat apa..."</h3>
+          <p>Ngecek rekening, saldo tinggal dikit. Tapi otak blank — belanja apa aja sih selama ini?</p>
+        </div>
+        <div class="pain-card">
+          <div class="pain-icon">&#128200;</div>
+          <h3>"Gak pernah tau pengeluaran bulanan..."</h3>
+          <p>Mau budgeting, tapi data aja gak ada. Catat manual males, aplikasi ribet, akhirnya pasrah.</p>
+        </div>
+        <div class="pain-card">
+          <div class="pain-icon">&#128561;</div>
+          <h3>"Uang gajian cuma buat bayar utang..."</h3>
+          <p>Setiap bulan gitu aja — gajian langsung habis bayar ini itu. Gak pernah nabung.</p>
+        </div>
+        <div class="pain-card">
+          <div class="pain-icon">&#128532;</div>
+          <h3>"Sering belanja impulsif tanpa sadar..."</h3>
+          <p>Beli yang gak dibutuhin, checkout tanpa mikir, nyesel bulan depan. Ulang lagi.</p>
+        </div>
+        <div class="pain-card">
+          <div class="pain-icon">&#128566;</div>
+          <h3>"Malu minta tolong soal duit..."</h3>
+          <p>Butuh bantuan atur keuangan, tapi gak tau mau tanya siapa. Buku panduan? Bikin pusing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Solution -->
+  <section class="solution" id="solusi">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge">Solusinya</span>
+        <h2>Kenalan sama <span class="highlight">YorFinance</span></h2>
+        <p>Catat keuangan cukup lewat chat. Tanpa aplikasi ribet, tanpa ribet input manual.</p>
+      </div>
+      <div class="solution-grid">
+        <div class="solution-item">
+          <div class="solution-num">1</div>
+          <div>
+            <h3>Kirim Chat Aja</h3>
+            <p>Ketik <code>beli kopi 25rb</code> atau kirim foto struk. Bot langsung paham dan catat otomatis.</p>
+          </div>
+        </div>
+        <div class="solution-item">
+          <div class="solution-num">2</div>
+          <div>
+            <h3>AI Kategorikan</h3>
+            <p>Bot otomatis kategorikan — makanan, transportasi, belanja, dll. Gak perlu pilih manual.</p>
+          </div>
+        </div>
+        <div class="solution-item">
+          <div class="solution-num">3</div>
+          <div>
+            <h3>Lihat Rekap Kapan Saja</h3>
+            <p>Tanya "rekapan bulan ini" — langsung keluar total pemasukan, pengeluaran, sisa uang, bahkan saran keuangan.</p>
+          </div>
+        </div>
+        <div class="solution-item">
+          <div class="solution-num">4</div>
+          <div>
+            <h3>Atur Budget</h3>
+            <p>Set budget per kategori, misal "set budget makanan 800rb". Bot ingetin kalau udah mulai boros.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge">Fitur Unggulan</span>
+        <h2>Semua yang Anda Butuhkan<br>Untuk Kelola Keuangan</h2>
+        <p>Catat, pantau, dan analisis keuangan pribadi tanpa ribet.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">&#128172;</div>
+          <h3>Catat via Chat</h3>
+          <p>Kirim pesan biasa seperti "beli kopi 25rb" — bot langsung paham dan mencatat otomatis.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#128247;</div>
+          <h3>Foto Struk</h3>
+          <p>Kirim foto struk/nota, AI akan ekstrak nominal, item, dan kategorinya secara otomatis.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#128200;</div>
+          <h3>Ringkasan Real-time</h3>
+          <p>Tanya "berapa pengeluaran bulan ini?" — bot langsung jawab dari data Google Sheets Anda.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#128274;</div>
+          <h3>Aman & Privat</h3>
+          <p>Data tersimpan di Google Sheets milik Anda sendiri. Tidak ada server pihak ketiga.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#9889;</div>
+          <h3>Instan & Mudah</h3>
+          <p>Tanpa install aplikasi. Cukup chat di Telegram yang sudah ada di HP Anda.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#127760;</div>
+          <h3>Kategori Otomatis</h3>
+          <p>AI menentukan kategori transaksi (makanan, transportasi, belanja, dll) secara otomatis.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="how" id="how">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge">Cara Kerja</span>
+        <h2>3 Langkah Saja</h2>
+        <p>Mulai catat keuangan dalam hitungan menit.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h3>Buka Telegram</h3>
+            <p>Cari <strong>@YorFinanceBot</strong> di Telegram, kirim <code>/start</code>, lalu masukkan redeem code yang Anda terima via email.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h3>Kirim Pesan</h3>
+            <p>Ketik transaksi seperti <code>beli kopi 25rb</code> atau kirim foto struk. Bot akan mencatat otomatis ke Google Sheets Anda.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h3>Pantau & Analisis</h3>
+            <p>Kirim <code>link</code> untuk lihat spreadsheet, atau tanya ringkasan seperti "total pengeluaran bulan ini berapa?"</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge">Harga</span>
+        <h2>Simple & Transparan</h2>
+        <p>Pilih paket yang sesuai kebutuhan Anda.</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="pricing-card pricing-popular">
+          <div class="pricing-name">Basic</div>
+          <div class="pricing-price">Rp29.000<span>/bulan</span></div>
+          <div class="pricing-period">Paket standar untuk pribadi</div>
+          <ul class="pricing-features">
+            <li>&#10003; Catat transaksi via chat</li>
+            <li>&#10003; Foto struk (AI ekstrak)</li>
+            <li>&#10003; Transaksi unlimited</li>
+            <li>&#10003; 1 Google Sheet pribadi</li>
+            <li>&#10003; Ringkasan bulanan</li>
+            <li>&#10003; Kategori otomatis</li>
+          </ul>
+          <a href="checkout.html" class="btn btn-primary btn-block">Pilih Basic</a>
+        </div>
+        <div class="pricing-card pricing-soon">
+          <div class="pricing-badge-soon">Segera Hadir</div>
+          <div class="pricing-name">Business</div>
+          <div class="pricing-price">Coming Soon</div>
+          <div class="pricing-period">Untuk tim & UMKM</div>
+          <ul class="pricing-features">
+            <li>&#10003; Semua fitur Basic</li>
+            <li>&#10003; Multi user (hingga 5)</li>
+            <li>&#10003; Dashboard konsolidasi</li>
+            <li>&#10003; Kategori custom</li>
+            <li>&#10003; Voice recognition</li>
+            <li>&#10003; Dedicated support</li>
+          </ul>
+          <a href="#cta" class="btn btn-outline btn-block" disabled>Coming Soon</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq" id="faq">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge">FAQ</span>
+        <h2>Pertanyaan Umum</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>Apa itu YorFinance?</summary>
+          <p>YorFinance adalah bot Telegram yang membantu Anda mencatat pemasukan dan pengeluaran pribadi secara otomatis. Cukup kirim pesan atau foto struk, data akan langsung tercatat di Google Sheets milik Anda.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Apakah data saya aman?</summary>
+          <p>Ya. Semua data tersimpan langsung di Google Sheets pribadi milik Anda. Tidak ada data yang disimpan di server pihak ketiga. Anda memiliki kontrol penuh atas data Anda.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Apakah perlu install aplikasi?</summary>
+          <p>Tidak. YorFinance berjalan di Telegram yang sudah terinstall di HP Anda. Cukup cari bot @YorFinanceBot dan mulai mencatat.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Bagaimana cara kerja foto struk?</summary>
+          <p>Kirim foto struk atau nota belanja ke bot. AI kami akan membaca dan mengekstrak informasi seperti nominal, nama item, dan kategorinya secara otomatis.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Berapa biaya menggunakan YorFinance?</summary>
+          <p>Paket Basic tersedia mulai dari Rp29.000/bulan. Paket Business dengan fitur voice recognition dan multi user akan segera hadir.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Bisa digunakan untuk bisnis kecil?</summary>
+          <p>Bisa! Paket Business mendukung multi user hingga 5 akun dengan dashboard konsolidasi, cocok untuk UMKM atau tim kecil.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta" id="cta">
+    <div class="container">
+      <div class="cta-box">
+        <h2>Udah Capek Gak Tau<br>Kemana Uangmu Pergi?</h2>
+        <p>Sekarang saatnya mulai kontrol keuangan. Cukup chat di Telegram, uangmu tercatat semua.</p>
+        <div class="cta-actions">
+          <a href="checkout.html" class="btn btn-white btn-lg">
+            &#128172; Mulai Sekarang — Rp29.000/bulan
+          </a>
+        </div>
+        <p class="cta-note">Tanpa aplikasi ribet. Tanpa data hilang. Semua ada di Google Sheets milikmu.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="#" class="logo">
+            <span class="logo-icon">&#9670;</span> YorFinance
+          </a>
+          <p>Bot Telegram pintar untuk mencatat keuangan pribadi secara otomatis.</p>
+        </div>
+        <div class="footer-links">
+          <h4>Produk</h4>
+          <ul>
+            <li><a href="#features">Fitur</a></li>
+            <li><a href="#pricing">Harga</a></li>
+            <li><a href="#how">Cara Kerja</a></li>
+          </ul>
+        </div>
+        <div class="footer-links">
+          <h4>Dukungan</h4>
+          <ul>
+            <li><a href="history.html">Status Pembayaran</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="https://t.me/YorFinanceBot" target="_blank">Telegram Bot</a></li>
+            <li><a href="mailto:support@yorfinance.com">Email Support</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 YorFinance. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

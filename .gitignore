@@ -1,0 +1,20 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+
+# Google Service Account credentials
+credentials/
+*.credentials.json
+service-account*.json
+
+# Prisma
+prisma/*.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# External tools
+.abacusai/

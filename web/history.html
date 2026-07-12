@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YorFinance — Status Pembayaran</title>
+  <link rel="icon" type="image/png" href="/public/asset/img/logo.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="checkout.css">
+  <link rel="stylesheet" href="history.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="checkout-page">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="logo">
+        <span class="logo-icon">&#9670;</span> YorFinance
+      </a>
+      <a href="index.html" class="btn btn-ghost btn-sm">Kembali</a>
+    </div>
+  </nav>
+
+  <!-- History Content -->
+  <section class="checkout-section">
+    <div class="history-container">
+      <h1>Status Pembayaran</h1>
+      <p class="checkout-subtitle">Riwayat pembayaran Anda. Status diperbarui otomatis.</p>
+
+      <div id="historyEmpty" class="history-empty" style="display:none;">
+        <div class="empty-icon">&#128179;</div>
+        <h3>Belum ada riwayat pembayaran</h3>
+        <p>Silakan melakukan pembayaran terlebih dahulu.</p>
+        <a href="checkout.html" class="btn btn-primary btn-lg">Bayar Sekarang</a>
+      </div>
+
+      <div id="historyList" class="history-list"></div>
+    </div>
+  </section>
+
+  <script src="history.js"></script>
+</body>
+</html>

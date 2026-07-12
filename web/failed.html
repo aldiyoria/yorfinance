@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YorFinance — Pembayaran Gagal</title>
+  <link rel="icon" type="image/png" href="/public/asset/img/logo.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="checkout.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="checkout-page">
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="logo">
+        <span class="logo-icon">&#9670;</span> YorFinance
+      </a>
+    </div>
+  </nav>
+
+  <section class="checkout-section">
+    <div class="checkout-form-wrapper" style="max-width: 480px; margin: 0 auto;">
+      <div class="checkout-error">
+        <div class="error-icon">&#10007;</div>
+        <h2>Pembayaran Gagal</h2>
+        <p>Maaf, pembayaran Anda tidak dapat diproses. Silakan coba lagi atau hubungi support.</p>
+
+        <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
+          <a href="checkout.html" class="btn btn-primary btn-lg">Coba Lagi</a>
+          <a href="history.html" class="btn btn-ghost btn-lg">Status Bayar</a>
+          <a href="index.html" class="btn btn-ghost btn-lg">Kembali</a>
+        </div>
+      </div>
+    </div>
+  </section>
+  <script>
+    // Update status di localStorage saat landing di halaman failed
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const orderId = params.get('order_id') || params.get('external_id');
+      if (!orderId) return;
+
+      const payments = JSON.parse(localStorage.getItem('yorfinance_payments') || '[]');
+      const idx = payments.findIndex(p => p.externalId === orderId);
+      if (idx !== -1) {
+        payments[idx].status = 'FAILED';
+        localStorage.setItem('yorfinance_payments', JSON.stringify(payments));
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+node_modules
+npm-debug.log*
+
+# Environment (secrets never in image)
+.env
+.env.*
+!.env.example
+
+# Google credentials (mounted as volume, not copied)
+credentials/
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dev tools
+.abacusai/
+*.log
+
+# Prisma dev.db
+prisma/*.db

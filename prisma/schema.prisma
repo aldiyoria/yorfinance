@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REFUNDED
+}
+
+model User {
+  id             String   @id @default(cuid())
+  chatId         String?  @unique
+  email          String
+  name           String?
+  sheetId        Int?
+  sheetName      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  subscription Subscription?
+  payments     Payment[]
+  budgets      Budget[]
+
+  @@index([chatId])
+}
+
+model Budget {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category  String
+  amount    Int
+  month     String   // format "YYYY-MM"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, category, month])
+  @@index([userId, month])
+}
+
+model Subscription {
+  id           String             @id @default(cuid())
+  userId       String             @unique
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status       SubscriptionStatus @default(PENDING)
+  plan         String             @default("basic")
+  redeemCode   String             @unique
+  activatedAt  DateTime?
+  startedAt    DateTime?
+  expiresAt    DateTime
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([redeemCode])
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  externalId      String        @unique
+  invoiceId       String?
+  amount          Int
+  currency        String        @default("IDR")
+  status          PaymentStatus @default(PENDING)
+  paymentMethod   String?
+  paymentChannel  String?
+  description     String?
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([externalId])
+  @@index([userId])
+}
