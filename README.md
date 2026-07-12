@@ -90,6 +90,107 @@ docker compose exec app node scripts/check-users.js
 
 ---
 
+## Deploy ke VPS (Production)
+
+### Arsitektur
+
+```
+Internet
+  ↓
+DNS (A Record → VPS IP)
+  ↓
+VPS (Ubuntu 22.04/24.04)
+  ├── Nginx (port 80/443) — reverse proxy + SSL/TLS
+  └── Docker
+      ├── App (Node.js, port 3000 → localhost only)
+      └── PostgreSQL (port 5433 → localhost only)
+```
+
+### 1. Beli VPS & Domain
+- **VPS**: DigitalOcean / Hetzner / Vultr / AWS (recommended: 2 vCPU, 2GB RAM, Ubuntu 24.04)
+- **Domain**: Namecheap / Cloudflare / Google Domains
+
+### 2. Setup DNS
+Di panel DNS domain kamu, tambahkan:
+
+| Type | Name | Value | TTL |
+|------|------|-------|-----|
+| A | `@` | `IP_VPS_KAMU` | Auto |
+| CNAME | `www` | `domain.com` | Auto |
+
+Contoh: domain `yorfinance.com` → A record `@` → `123.45.67.89`
+
+### 3. Setup VPS (sekali saja)
+SSH ke VPS, lalu jalankan:
+```bash
+# Clone repo dulu
+git clone https://github.com/YORIDORI/mankeu.git /opt/yorfinance
+cd /opt/yorfinance
+
+# Jalankan setup script
+sudo bash scripts/setup-server.sh yorfinance.com admin@yorfinance.com
+```
+
+Script akan install: Docker, Nginx, Certbot, Firewall (UFW).
+
+### 4. Deploy App
+```bash
+cd /opt/yorfinance
+
+# Isi .env dengan values produksi
+nano .env
+
+# Taruh Google credentials
+mkdir -p credentials
+# Upload google-service-account.json ke credentials/
+
+# Jalankan deploy
+bash scripts/deploy.sh yorfinance.com
+```
+
+### 5. Setup SSL (HTTPS)
+Setelah DNS propagate (5-30 menit):
+```bash
+sudo certbot certonly --webroot \
+  -w /var/www/certbot \
+  -d yorfinance.com \
+  -d www.yorfinance.com \
+  --email admin@yorfinance.com \
+  --agree-tos
+```
+
+Certbot auto-renewal sudah di-setup oleh script (cron).
+
+### 6. Update DOKU Callback URL
+Di DOKU dashboard, ganti notification URL ke:
+```
+https://yorfinance.com/api/payments/callback
+```
+
+### Perintah Berguna di VPS
+```bash
+# Lihat log app
+docker compose logs -f app
+
+# Restart app
+docker compose restart app
+
+# Update code
+cd /opt/yorfinance && git pull && docker compose up -d --build
+
+# Backup database
+docker compose exec db pg_dump -U yorfinance mankeu > backup_$(date +%Y%m%d).sql
+
+# Restore database
+cat backup.sql | docker compose exec -T db psql -U yorfinance mankeu
+
+# Cek status semua service
+docker compose ps
+systemctl status nginx
+```
+
+---
+
 ## Setup Manual (Tanpa Docker)
 
 ### Prasyarat
@@ -207,6 +308,8 @@ Sistem akan:
 ```
 mankeu/
 ├── credentials/                    # Google Service Account key (NOT in git)
+├── nginx/
+│   └── yorfinance.conf             # Nginx reverse proxy config
 ├── prisma/
 │   ├── schema.prisma               # User, Subscription, Payment, Budget
 │   └── migrations/                 # Database migrations
@@ -223,7 +326,9 @@ mankeu/
 │   └── server.js                   # Bootstrap
 ├── web/                            # Landing page + checkout
 ├── public/                         # Static assets (logo)
-├── scripts/                        # Utility scripts
+├── scripts/
+│   ├── setup-server.sh             # VPS setup (Docker + Nginx + Certbot)
+│   └── deploy.sh                   # Deploy & update script
 ├── Dockerfile                      # Multi-stage build
 ├── docker-compose.yml              # App + PostgreSQL
 ├── docker-entrypoint.sh            # Migrate + start
