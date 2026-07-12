@@ -54,6 +54,9 @@ function initTelegram() {
     { command: 'tanggal', description: 'Rekap transaksi tanggal tertentu' },
     { command: 'budget', description: 'Atur & cek budget per kategori' },
     { command: 'dashboard', description: 'Buka dashboard web dengan grafik' },
+    { command: 'hapus', description: 'Hapus salah satu transaksi' },
+    { command: 'edit', description: 'Edit data transaksi' },
+    { command: 'reset', description: 'Hapus semua data & mulai dari awal' },
   ]).then(() => {
     logger.info('Bot menu commands registered');
   }).catch((err) => {
@@ -186,6 +189,45 @@ function initTelegram() {
       await safeReply(chatId, reply);
     } catch (err) {
       logger.error({ err, chatId }, 'Error handling /dashboard');
+      await safeReply(chatId, 'Terjadi kesalahan. Coba lagi sebentar.');
+    }
+  });
+
+  // /hapus — hapus transaksi
+  bot.onText(/\/hapus/, async (msg) => {
+    const chatId = msg.chat.id;
+    if (msg.chat.type !== 'private') return;
+    try {
+      const reply = await handleIncomingMessage({ chatId, text: '/hapus', media: null });
+      await safeReply(chatId, reply);
+    } catch (err) {
+      logger.error({ err, chatId }, 'Error handling /hapus');
+      await safeReply(chatId, 'Terjadi kesalahan. Coba lagi sebentar.');
+    }
+  });
+
+  // /edit — edit transaksi
+  bot.onText(/\/edit/, async (msg) => {
+    const chatId = msg.chat.id;
+    if (msg.chat.type !== 'private') return;
+    try {
+      const reply = await handleIncomingMessage({ chatId, text: '/edit', media: null });
+      await safeReply(chatId, reply);
+    } catch (err) {
+      logger.error({ err, chatId }, 'Error handling /edit');
+      await safeReply(chatId, 'Terjadi kesalahan. Coba lagi sebentar.');
+    }
+  });
+
+  // /reset — reset semua data
+  bot.onText(/\/reset/, async (msg) => {
+    const chatId = msg.chat.id;
+    if (msg.chat.type !== 'private') return;
+    try {
+      const reply = await handleIncomingMessage({ chatId, text: '/reset', media: null });
+      await safeReply(chatId, reply);
+    } catch (err) {
+      logger.error({ err, chatId }, 'Error handling /reset');
       await safeReply(chatId, 'Terjadi kesalahan. Coba lagi sebentar.');
     }
   });

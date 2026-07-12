@@ -161,4 +161,172 @@ async function readTransactions({ sheetName }) {
   }));
 }
 
-module.exports = { createUserSheet, appendTransaction, readTransactions };
+/**
+ * Membaca transaksi dengan row index (untuk edit/hapus).
+ * Row index = index di array + 2 (karena header row 1, data mulai row 2).
+ * @param {object} opts { sheetName }
+ * @returns {Promise<Array<{rowIndex: number, date,type,category,item,amount,note}>>}
+ */
+async function readTransactionsWithIndex({ sheetName }) {
+  const spreadsheetId = env.google.spreadsheetId;
+
+  const response = await withRetry(() =>
+    sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `'${sheetName}'!A2:G`,
+    })
+  );
+
+  const rows = response.data.values || [];
+  return rows.map((row, idx) => ({
+    rowIndex: idx + 2,
+    date: row[0] || '',
+    type: row[1] === 'Pemasukan' ? 'income' : 'expense',
+    category: row[2] || 'Lainnya',
+    item: row[3] || '',
+    amount: Number(row[4]) || 0,
+    note: row[5] || '',
+  }));
+}
+
+/**
+ * Dapatkan sheetId dari sheet name.
+ * @param {string} sheetName
+ * @returns {Promise<number|null>}
+ */
+async function getSheetIdByName(sheetName) {
+  const spreadsheetId = env.google.spreadsheetId;
+  const meta = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: 'sheets.properties',
+  });
+  const sheet = meta.data.sheets.find((s) => s.properties.title === sheetName);
+  return sheet ? sheet.properties.sheetId : null;
+}
+
+/**
+ * Hapus satu baris transaksi berdasarkan row index.
+ * @param {string} sheetName
+ * @param {number} rowIndex - baris di spreadsheet (mulai dari 2)
+ */
+async function deleteRow(sheetName, rowIndex) {
+  const spreadsheetId = env.google.spreadsheetId;
+  const sheetId = await getSheetIdByName(sheetName);
+  if (sheetId === null) throw new Error(`Sheet "${sheetName}" tidak ditemukan`);
+
+  await withRetry(() =>
+    sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: [
+          {
+            deleteDimension: {
+              range: {
+                sheetId,
+                dimension: 'ROWS',
+                startIndex: rowIndex - 1,
+                endIndex: rowIndex,
+              },
+            },
+          },
+        ],
+      },
+    })
+  );
+
+  logger.info({ sheetName, rowIndex }, 'Baris transaksi dihapus');
+}
+
+/**
+ * Update satu baris transaksi berdasarkan row index.
+ * @param {string} sheetName
+ * @param {number} rowIndex
+ * @param {object} data - { date?, type?, category?, item?, amount?, note? }
+ */
+async function updateRow(sheetName, rowIndex, data) {
+  const spreadsheetId = env.google.spreadsheetId;
+
+  // First read current row to get existing values
+  const response = await withRetry(() =>
+    sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `'${sheetName}'!A${rowIndex}:G${rowIndex}`,
+    })
+  );
+
+  const current = response.data.values?.[0] || ['', '', '', '', '', '', ''];
+  const updated = [
+    data.date ?? current[0],
+    data.type === 'income' ? 'Pemasukan' : data.type === 'expense' ? 'Pengeluaran' : current[1],
+    data.category ?? current[2],
+    data.item ?? current[3],
+    data.amount !== undefined ? data.amount : current[4],
+    data.note !== undefined ? data.note : current[5],
+    current[6], // keep original "Dicatat Pada"
+  ];
+
+  await withRetry(() =>
+    sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `'${sheetName}'!A${rowIndex}:G${rowIndex}`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [updated] },
+    })
+  );
+
+  logger.info({ sheetName, rowIndex }, 'Baris transaksi diupdate');
+}
+
+/**
+ * Hapus semua transaksi dari sheet user (kecuali header).
+ * @param {string} sheetName
+ */
+async function clearAllTransactions(sheetName) {
+  const spreadsheetId = env.google.spreadsheetId;
+  const sheetId = await getSheetIdByName(sheetName);
+  if (sheetId === null) throw new Error(`Sheet "${sheetName}" tidak ditemukan`);
+
+  // Count rows first
+  const response = await withRetry(() =>
+    sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `'${sheetName}'!A2:G`,
+    })
+  );
+
+  const rowCount = (response.data.values || []).length;
+  if (rowCount === 0) return;
+
+  // Delete all data rows (keep header at row 1)
+  await withRetry(() =>
+    sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: [
+          {
+            deleteDimension: {
+              range: {
+                sheetId,
+                dimension: 'ROWS',
+                startIndex: 1,
+                endIndex: 1 + rowCount,
+              },
+            },
+          },
+        ],
+      },
+    })
+  );
+
+  logger.info({ sheetName, rowCount }, 'Semua transaksi dihapus dari sheet');
+}
+
+module.exports = {
+  createUserSheet,
+  appendTransaction,
+  readTransactions,
+  readTransactionsWithIndex,
+  deleteRow,
+  updateRow,
+  clearAllTransactions,
+};

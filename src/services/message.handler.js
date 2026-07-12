@@ -1,11 +1,14 @@
 const logger = require('../utils/logger');
 const { checkAccess, redeemCode, ensureDashboardToken } = require('./subscription.service');
 const openaiService = require('./openai.service');
-const { appendTransaction, createUserSheet, readTransactions } = require('./sheets.service');
+const { appendTransaction, createUserSheet, readTransactions, readTransactionsWithIndex, deleteRow, updateRow, clearAllTransactions } = require('./sheets.service');
 const { buildAggregate, buildStructuredSummary, filterTransactionsByDate, buildRecapList } = require('./summary.service');
 const { setBudget, checkBudget, deleteBudget } = require('./budget.service');
 const { prisma } = require('../db/prisma');
 const env = require('../config/env');
+
+// State management untuk edit/delete/reset flow
+const userStates = new Map();
 
 const NOT_SUBSCRIBED_MSG =
   'Hi! Selamat datang di *YorFinance* 🎉\n\n' +
@@ -23,6 +26,10 @@ const HELP_MSG =
   '📸 *Foto Struk*\n' +
   'Kirim foto struk/nota → otomatis dicatat.\n' +
   'Bisa tambahkan caption untuk catatan tambahan.\n\n' +
+  '✏️ *Edit & Hapus*\n' +
+  '  /hapus — hapus salah satu transaksi\n' +
+  '  /edit — edit data transaksi\n' +
+  '  /reset — hapus semua data & mulai dari awal\n\n' +
   '📊 *Rekap & Ringkasan*\n' +
   '  /rekap — rekap keuangan bulanan (summary)\n' +
   '  /hari — rekap transaksi hari ini (list)\n' +
@@ -34,6 +41,8 @@ const HELP_MSG =
   '  /budget — cek sisa budget per kategori\n' +
   '  • set budget makanan 800000\n' +
   '  • hapus budget hiburan\n\n' +
+  '📊 *Dashboard*\n' +
+  '  /dashboard — buka dashboard web dengan grafik\n\n' +
   '⌨️ *Perintah Bot*\n' +
   '  /help — tampilkan bantuan ini\n' +
   '  /perintah — sama dengan /help\n' +
@@ -166,7 +175,183 @@ function getHelpReply(text) {
   if (text.startsWith('/bulan')) return '__RECAP_BULAN__';
   if (text.startsWith('/tanggal')) return '__RECAP_TANGGAL__';
   if (text.startsWith('/dashboard')) return '__DASHBOARD__';
+  if (text.startsWith('/hapus')) return '__DELETE__';
+  if (text.startsWith('/edit')) return '__EDIT__';
+  if (text.startsWith('/reset')) return '__RESET__';
   return null;
+}
+
+/**
+ * Format numbered list transaksi untuk edit/hapus.
+ */
+function formatNumberedTxList(txs, label) {
+  if (txs.length === 0) {
+    return `📋 *${label}*\n\nTidak ada transaksi.`;
+  }
+
+  const lines = [`📋 *${label}*\n`];
+  for (let i = 0; i < txs.length; i++) {
+    const t = txs[i];
+    const icon = t.type === 'income' ? '🟢' : '🔴';
+    lines.push(`${i + 1}. ${icon} ${t.date} — ${t.item}`);
+    lines.push(`   ${formatRupiah(t.amount)} [${t.category}]`);
+  }
+  lines.push('\nBalas dengan *nomor* transaksi.');
+  return lines.join('\n');
+}
+
+/**
+ * Parse user reply for edit fields.
+ * Contoh: "nominal 35000" atau "item Kopi Susu" atau "kategori Makanan"
+ */
+function parseEditFields(text) {
+  const lower = text.toLowerCase().trim();
+
+  // Try "field value" pattern
+  const fieldMatch = lower.match(/^(nominal|item|kategori|tanggal|catatan|tipe)\s+(.+)$/i);
+  if (!fieldMatch) return null;
+
+  const field = fieldMatch[1].toLowerCase();
+  const value = fieldMatch[2].trim();
+
+  switch (field) {
+    case 'nominal': {
+      const amount = parseNominal(value);
+      if (amount > 0) return { amount };
+      return null;
+    }
+    case 'item':
+      return { item: value };
+    case 'kategori':
+    case 'kategori':
+      return { category: value };
+    case 'tanggal':
+      return { date: value };
+    case 'catatan':
+      return { note: value };
+    case 'tipe': {
+      if (value.includes('masuk') || value.includes('pemasukan') || value === 'income') return { type: 'income' };
+      if (value.includes('keluar') || value.includes('pengeluaran') || value === 'expense') return { type: 'expense' };
+      return null;
+    }
+    default:
+      return null;
+  }
+}
+
+// ===== Delete Flow =====
+
+async function handleDeleteSelect(chatId, text, state) {
+  const idx = parseInt(text, 10);
+  if (isNaN(idx) || idx < 1 || idx > state.transactions.length) {
+    userStates.delete(chatId);
+    return '❌ Nomor tidak valid. Ketik /hapus untuk coba lagi.';
+  }
+
+  const tx = state.transactions[idx - 1];
+  state.selectedTx = tx;
+  state.selectedIdx = idx;
+  state.action = 'delete_confirm';
+  userStates.set(chatId, state);
+
+  const icon = tx.type === 'income' ? '🟢' : '🔴';
+  return (
+    `Yakin hapus transaksi ini?\n\n` +
+    `${icon} *${tx.item}*\n` +
+    `• Tanggal: ${tx.date}\n` +
+    `• Nominal: ${formatRupiah(tx.amount)}\n` +
+    `• Kategori: ${tx.category}\n\n` +
+    `Balas *YA* untuk hapus atau *BATAL* untuk batal.`
+  );
+}
+
+async function handleDeleteConfirm(chatId, text, state) {
+  const answer = text.toUpperCase().trim();
+  userStates.delete(chatId);
+
+  if (answer === 'YA' || answer === 'Y' || answer === 'YES') {
+    const sheetName = state.sheetName;
+    await deleteRow(sheetName, state.selectedTx.rowIndex);
+    return `✅ Transaksi "${state.selectedTx.item}" (${formatRupiah(state.selectedTx.amount)}) berhasil dihapus.`;
+  }
+
+  return '❌ Hapus dibatalkan.';
+}
+
+// ===== Edit Flow =====
+
+async function handleEditSelect(chatId, text, state) {
+  const idx = parseInt(text, 10);
+  if (isNaN(idx) || idx < 1 || idx > state.transactions.length) {
+    userStates.delete(chatId);
+    return '❌ Nomor tidak valid. Ketik /edit untuk coba lagi.';
+  }
+
+  const tx = state.transactions[idx - 1];
+  state.selectedTx = tx;
+  state.selectedIdx = idx;
+  state.action = 'edit_field';
+  userStates.set(chatId, state);
+
+  return (
+    `📝 *Edit Transaksi #${idx}*\n\n` +
+    `${tx.type === 'income' ? '🟢' : '🔴'} ${tx.item} — ${formatRupiah(tx.amount)}\n\n` +
+    `Field yang bisa diubah:\n` +
+    `• *nominal* [jumlah] — contoh: nominal 35000\n` +
+    `• *item* [nama] — contoh: item Kopi Susu\n` +
+    `• *kategori* [nama] — contoh: kategori Makanan\n` +
+    `• *tanggal* [DD-MM-YYYY] — contoh: tanggal 12-07-2026\n` +
+    `• *catatan* [teks] — contoh: catatan tambahan\n` +
+    `• *tipe* [pemasukan/pengeluaran]\n\n` +
+    `Balas dengan field yang ingin diubah.`
+  );
+}
+
+async function handleEditField(chatId, text, state) {
+  const answer = text.trim();
+
+  // Cancel
+  if (answer.toUpperCase() === 'BATAL' || answer.toUpperCase() === 'CANCEL') {
+    userStates.delete(chatId);
+    return '❌ Edit dibatalkan.';
+  }
+
+  const fields = parseEditFields(answer);
+  if (!fields) {
+    return (
+      '❌ Format tidak dikenali.\n\n' +
+      'Contoh:\n' +
+      '• nominal 35000\n' +
+      '• item Kopi Susu\n' +
+      '• kategori Makanan\n' +
+      '• tanggal 12-07-2026\n' +
+      '• catatan tambahan\n' +
+      '• tipe pemasukan\n\n' +
+      'Atau ketik *BATAL* untuk batal.'
+    );
+  }
+
+  const sheetName = state.sheetName;
+  await updateRow(sheetName, state.selectedTx.rowIndex, fields);
+  userStates.delete(chatId);
+
+  const updatedField = Object.entries(fields).map(([k, v]) => `${k}: ${typeof v === 'number' ? formatRupiah(v) : v}`).join(', ');
+  return `✅ Transaksi berhasil diubah!\n\n${updatedField}`;
+}
+
+// ===== Reset Flow =====
+
+async function handleResetConfirm(chatId, text, state) {
+  const answer = text.trim().toUpperCase();
+  userStates.delete(chatId);
+
+  if (answer === 'RESET') {
+    const sheetName = state.sheetName;
+    await clearAllTransactions(sheetName);
+    return '✅ Semua data transaksi berhasil dihapus!\n\nMulai catat lagi dari awal.';
+  }
+
+  return '❌ Reset dibatalkan. Ketik /reset untuk coba lagi.';
 }
 
 /**
@@ -179,6 +364,28 @@ function getHelpReply(text) {
  */
 async function handleIncomingMessage({ chatId, text, media }) {
   const trimmed = (text || '').trim();
+
+  // Check for active state (edit/delete/reset flow)
+  const state = userStates.get(chatId);
+
+  if (state) {
+    // Handle state-specific replies
+    if (state.action === 'delete_select') {
+      return handleDeleteSelect(chatId, trimmed, state);
+    }
+    if (state.action === 'delete_confirm') {
+      return handleDeleteConfirm(chatId, trimmed, state);
+    }
+    if (state.action === 'edit_select') {
+      return handleEditSelect(chatId, trimmed, state);
+    }
+    if (state.action === 'edit_field') {
+      return handleEditField(chatId, trimmed, state);
+    }
+    if (state.action === 'reset_confirm') {
+      return handleResetConfirm(chatId, trimmed, state);
+    }
+  }
 
   // /start → sapa + minta redeem code
   if (trimmed === '/start') {
@@ -341,6 +548,31 @@ async function handleIncomingMessage({ chatId, text, media }) {
         'Buka link di bawah untuk melihat dashboard lengkap dengan grafik dan visualisasi:\n\n' +
         `${url}\n\n` +
         '💡 Dashboard menampilkan ringkasan, grafik pengeluaran, dan tren keuangan Anda.'
+      );
+    }
+    if (helpReply === '__DELETE__') {
+      const sheetName = await ensureSheet(user);
+      const txs = await readTransactionsWithIndex({ sheetName });
+      const recent = txs.slice(-15).reverse();
+      if (recent.length === 0) return '📋 Tidak ada transaksi untuk dihapus.';
+      userStates.set(chatId, { action: 'delete_select', transactions: recent, sheetName });
+      return formatNumberedTxList(recent, 'Pilih Transaksi untuk Dihapus');
+    }
+    if (helpReply === '__EDIT__') {
+      const sheetName = await ensureSheet(user);
+      const txs = await readTransactionsWithIndex({ sheetName });
+      const recent = txs.slice(-15).reverse();
+      if (recent.length === 0) return '📋 Tidak ada transaksi untuk diedit.';
+      userStates.set(chatId, { action: 'edit_select', transactions: recent, sheetName });
+      return formatNumberedTxList(recent, 'Pilih Transaksi untuk Diedit');
+    }
+    if (helpReply === '__RESET__') {
+      userStates.set(chatId, { action: 'reset_confirm', sheetName: user.sheetName });
+      return (
+        '⚠️ *RESET SEMUA DATA*\n\n' +
+        'Semua transaksi Anda akan dihapus permanen dari spreadsheet.\n' +
+        'Tindakan ini *tidak bisa dibatalkan*.\n\n' +
+        'Ketik *RESET* untuk konfirmasi atau *BATAL* untuk batal.'
       );
     }
     return helpReply;
