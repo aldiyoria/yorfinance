@@ -53,6 +53,7 @@ function initTelegram() {
     { command: 'bulan', description: 'Rekap transaksi bulan ini (list)' },
     { command: 'tanggal', description: 'Rekap transaksi tanggal tertentu' },
     { command: 'budget', description: 'Atur & cek budget per kategori' },
+    { command: 'dashboard', description: 'Buka dashboard web dengan grafik' },
   ]).then(() => {
     logger.info('Bot menu commands registered');
   }).catch((err) => {
@@ -172,6 +173,19 @@ function initTelegram() {
       await safeReply(chatId, reply);
     } catch (err) {
       logger.error({ err, chatId }, 'Error handling /tanggal');
+      await safeReply(chatId, 'Terjadi kesalahan. Coba lagi sebentar.');
+    }
+  });
+
+  // /dashboard — buka dashboard web
+  bot.onText(/\/dashboard/, async (msg) => {
+    const chatId = msg.chat.id;
+    if (msg.chat.type !== 'private') return;
+    try {
+      const reply = await handleIncomingMessage({ chatId, text: '/dashboard', media: null });
+      await safeReply(chatId, reply);
+    } catch (err) {
+      logger.error({ err, chatId }, 'Error handling /dashboard');
       await safeReply(chatId, 'Terjadi kesalahan. Coba lagi sebentar.');
     }
   });

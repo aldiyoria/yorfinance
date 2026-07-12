@@ -2,6 +2,7 @@ const { prisma } = require('../db/prisma');
 const { createUserSheet } = require('./sheets.service');
 const { sendRedeemEmail } = require('./email.service');
 const logger = require('../utils/logger');
+const crypto = require('crypto');
 
 const REDEEM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
@@ -9,6 +10,10 @@ function generateRedeemCode() {
   return Array.from({ length: 6 }, () =>
     REDEEM_CODE_CHARS[Math.floor(Math.random() * REDEEM_CODE_CHARS.length)]
   ).join('');
+}
+
+function generateDashboardToken() {
+  return crypto.randomBytes(32).toString('hex');
 }
 
 /**
@@ -71,9 +76,10 @@ async function redeemCode(chatId, code) {
   }
 
   const now = new Date();
+  const dashboardToken = generateDashboardToken();
   const user = await prisma.user.update({
     where: { id: sub.userId },
-    data: { chatId: String(chatId) },
+    data: { chatId: String(chatId), dashboardToken },
   });
 
   const updatedSub = await prisma.subscription.update({
@@ -159,4 +165,19 @@ async function subscribe({ email, name, plan = 'basic', durationDays = 30 }) {
   return { user, subscription };
 }
 
-module.exports = { checkAccess, redeemCode, subscribe, generateRedeemCode };
+/**
+ * Generate dashboard token for user if not exists.
+ * @param {object} user
+ * @returns {Promise<string>} dashboard token
+ */
+async function ensureDashboardToken(user) {
+  if (user.dashboardToken) return user.dashboardToken;
+  const token = generateDashboardToken();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { dashboardToken: token },
+  });
+  return token;
+}
+
+module.exports = { checkAccess, redeemCode, subscribe, generateRedeemCode, ensureDashboardToken };

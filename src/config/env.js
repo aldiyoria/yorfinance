@@ -48,6 +48,8 @@ const env = {
     callbackUrl: process.env.DOKU_CALLBACK_URL || 'http://localhost:3000/api/payments/callback',
   },
 
+  dashboardBaseUrl: process.env.DASHBOARD_BASE_URL || 'http://localhost:3000',
+
   tz: process.env.TZ || 'Asia/Jakarta',
 };
 

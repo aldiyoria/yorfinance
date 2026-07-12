@@ -5,6 +5,7 @@ const swaggerSpec = require('./config/swagger');
 const subscriptionRoutes = require('./routes/subscription.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const sandboxRoutes = require('./routes/sandbox.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptim
 // API Routes
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Sandbox Routes (hanya untuk development)
 if (process.env.NODE_ENV !== 'production') {

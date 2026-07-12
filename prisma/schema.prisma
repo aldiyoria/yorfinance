@@ -29,6 +29,7 @@ model User {
   name           String?
   sheetId        Int?
   sheetName      String?
+  dashboardToken String?  @unique
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -37,6 +38,7 @@ model User {
   budgets      Budget[]
 
   @@index([chatId])
+  @@index([dashboardToken])
 }
 
 model Budget {

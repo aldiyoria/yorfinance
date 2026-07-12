@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — YorFinance</title>
+  <link rel="icon" type="image/png" href="/public/asset/img/logo.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <link rel="stylesheet" href="/web/dashboard.css">
+</head>
+<body>
+
+  <!-- Loading -->
+  <div id="loading" class="loading-screen">
+    <div class="spinner"></div>
+    <p>Memuat data keuangan...</p>
+  </div>
+
+  <!-- Error -->
+  <div id="error-screen" class="error-screen" style="display:none">
+    <div class="error-card">
+      <div class="error-icon">⚠️</div>
+      <h2>Token Tidak Valid</h2>
+      <p>Link dashboard tidak valid atau sudah kedaluwarsa.</p>
+      <p class="error-hint">Buka Telegram → ketik <code>/dashboard</code> untuk link baru.</p>
+    </div>
+  </div>
+
+  <!-- Main Dashboard -->
+  <div id="dashboard" class="dashboard" style="display:none">
+
+    <!-- Header -->
+    <header class="dash-header">
+      <div class="header-left">
+        <div class="logo-mark">YF</div>
+        <div>
+          <h1>Dashboard</h1>
+          <p class="header-sub">Ringkasan keuangan Anda</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <span class="user-badge" id="user-name">—</span>
+        <span class="generated-at" id="generated-at"></span>
+      </div>
+    </header>
+
+    <!-- Summary Cards -->
+    <section class="summary-cards">
+      <div class="card card-balance">
+        <div class="card-label">Saldo Total</div>
+        <div class="card-value" id="total-balance">—</div>
+        <div class="card-sub" id="total-tx-count">0 transaksi</div>
+      </div>
+      <div class="card card-income">
+        <div class="card-label">Total Pemasukan</div>
+        <div class="card-value green" id="total-income">—</div>
+        <div class="card-sub" id="month-income">Bulan ini: —</div>
+      </div>
+      <div class="card card-expense">
+        <div class="card-label">Total Pengeluaran</div>
+        <div class="card-value red" id="total-expense">—</div>
+        <div class="card-sub" id="month-expense">Bulan ini: —</div>
+      </div>
+      <div class="card card-month">
+        <div class="card-label">Saldo Bulan Ini</div>
+        <div class="card-value" id="month-balance">—</div>
+        <div class="card-sub" id="month-tx-count">0 transaksi bulan ini</div>
+      </div>
+    </section>
+
+    <!-- Charts Row 1 -->
+    <section class="charts-row">
+      <div class="chart-card wide">
+        <h3>Pemasukan vs Pengeluaran Bulanan</h3>
+        <canvas id="chart-monthly"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Distribusi Pengeluaran</h3>
+        <canvas id="chart-category"></canvas>
+      </div>
+    </section>
+
+    <!-- Charts Row 2 -->
+    <section class="charts-row">
+      <div class="chart-card wide">
+        <h3>Tren Pengeluaran Harian (30 Hari)</h3>
+        <canvas id="chart-daily"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Budget Status</h3>
+        <div id="budget-list" class="budget-list"></div>
+      </div>
+    </section>
+
+    <!-- Recent Transactions -->
+    <section class="transactions-section">
+      <h3>Transaksi Terbaru</h3>
+      <div class="table-wrap">
+        <table class="tx-table">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Tipe</th>
+              <th>Kategori</th>
+              <th>Item</th>
+              <th>Nominal</th>
+            </tr>
+          </thead>
+          <tbody id="tx-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="/web/dashboard.js"></script>
+</body>
+</html>

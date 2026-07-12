@@ -1,10 +1,11 @@
 const logger = require('../utils/logger');
-const { checkAccess, redeemCode } = require('./subscription.service');
+const { checkAccess, redeemCode, ensureDashboardToken } = require('./subscription.service');
 const openaiService = require('./openai.service');
 const { appendTransaction, createUserSheet, readTransactions } = require('./sheets.service');
 const { buildAggregate, buildStructuredSummary, filterTransactionsByDate, buildRecapList } = require('./summary.service');
 const { setBudget, checkBudget, deleteBudget } = require('./budget.service');
 const { prisma } = require('../db/prisma');
+const env = require('../config/env');
 
 const NOT_SUBSCRIBED_MSG =
   'Hi! Selamat datang di *YorFinance* 🎉\n\n' +
@@ -39,6 +40,7 @@ const HELP_MSG =
   '  /kategori — lihat daftar kategori\n' +
   '  /contoh — lihat contoh penggunaan\n' +
   '  /status — cek status langganan\n' +
+  '  /dashboard — buka dashboard web\n' +
   '  /start — mulai dari awal';
 
 const CATEGORY_MSG =
@@ -163,6 +165,7 @@ function getHelpReply(text) {
   if (text.startsWith('/minggu')) return '__RECAP_MINGGU__';
   if (text.startsWith('/bulan')) return '__RECAP_BULAN__';
   if (text.startsWith('/tanggal')) return '__RECAP_TANGGAL__';
+  if (text.startsWith('/dashboard')) return '__DASHBOARD__';
   return null;
 }
 
@@ -328,6 +331,17 @@ async function handleIncomingMessage({ chatId, text, media }) {
     }
     if (helpReply === '__RECAP_TANGGAL__') {
       return 'Format: `/tanggal DD-MM-YYYY` atau `/tanggal DD-MM-YYYY s/d DD-MM-YYYY`\n\nContoh:\n• `/tanggal 12-07-2026` — rekap tanggal 12 Juli 2026\n• `/tanggal 01-07-2026 s/d 12-07-2026` — rekap 1-12 Juli 2026';
+    }
+    if (helpReply === '__DASHBOARD__') {
+      const token = await ensureDashboardToken(user);
+      const baseUrl = env.dashboardBaseUrl;
+      const url = `${baseUrl}/web/dashboard.html?t=${token}`;
+      return (
+        '📊 *Dashboard Keuangan*\n\n' +
+        'Buka link di bawah untuk melihat dashboard lengkap dengan grafik dan visualisasi:\n\n' +
+        `${url}\n\n` +
+        '💡 Dashboard menampilkan ringkasan, grafik pengeluaran, dan tren keuangan Anda.'
+      );
     }
     return helpReply;
   }
