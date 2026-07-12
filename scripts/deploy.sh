@@ -1,96 +1,135 @@
 #!/bin/bash
 # ============================================================
-# YorFinance — Deploy Script
-# Usage: bash scripts/deploy.sh <domain>
+# YorFinance — Deploy Application
+# Builds Docker, configures Nginx HTTPS, sets up SSL
+# Usage: bash scripts/deploy.sh <domain> <email>
 # ============================================================
 set -euo pipefail
 
 DOMAIN="${1:-}"
+EMAIL="${2:-}"
 APP_DIR="/opt/yorfinance"
-REPO="https://github.com/aldiyoria/yorfinance.git"
 
 echo "=========================================="
-echo "  YorFinance Deploy"
+echo "  YorFinance — Deploy"
 echo "=========================================="
-
-# ---- 1. Clone or pull ----
-if [ ! -d "$APP_DIR/.git" ]; then
-  echo "[1/4] Cloning repository..."
-  mkdir -p /opt
-  git clone "$REPO" "$APP_DIR"
-else
-  echo "[1/4] Pulling latest changes..."
-  cd "$APP_DIR"
-  git pull origin master
-fi
 
 cd "$APP_DIR"
 
-# ---- 2. Setup .env ----
-echo "[2/4] Checking .env..."
+# ---- 1. Setup .env ----
+echo ""
+echo "[1/5] Checking .env..."
 if [ ! -f .env ]; then
   cp .env.example .env
   echo ""
-  echo "  ⚠️  .env file created from template."
+  echo "  ⚠️  .env created from template."
   echo "  Edit it with your actual values:"
   echo "    nano $APP_DIR/.env"
   echo ""
-  echo "  Required variables:"
+  echo "  Required:"
   echo "    - TELEGRAM_BOT_TOKEN"
   echo "    - OPENAI_API_KEY"
   echo "    - SMTP_USER + SMTP_PASS"
   echo "    - ADMIN_API_KEY"
-  echo "    - DB_PASSWORD (same as POSTGRES_PASSWORD)"
+  echo "    - DB_PASSWORD"
   echo ""
   exit 1
 fi
+echo "  .env found."
 
-# ---- 3. Build & start ----
-echo "[3/3] Building and starting containers..."
+# ---- 2. Build & start Docker ----
+echo ""
+echo "[2/5] Building and starting containers..."
 docker compose up -d --build
+
+# ---- 3. Wait for app to be healthy ----
+echo ""
+echo "[3/5] Waiting for app to start..."
+for i in $(seq 1 30); do
+  if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
+    echo "  App is healthy!"
+    break
+  fi
+  if [ "$i" -eq 30 ]; then
+    echo "  ⚠️  App may still be starting. Check: docker compose logs app"
+  fi
+  sleep 2
+done
 
 # ---- 4. Setup Nginx + SSL ----
 if [ -n "$DOMAIN" ]; then
-  echo "[4/4] Configuring Nginx for $DOMAIN..."
+  echo ""
+  echo "[4/5] Configuring Nginx + SSL for $DOMAIN..."
 
   # Get server IP
   SERVER_IP=$(curl -s ifconfig.me)
+  echo "  Server IP: $SERVER_IP"
 
-  # Copy production nginx config
-  sed "s/DOMAIN_ANDA/$DOMAIN/g" nginx/yorfinance.conf > /etc/nginx/sites-available/yorfinance
-  nginx -t && systemctl reload nginx
-
-  # Setup Certbot auto-renewal
+  # Check if SSL certificate already exists
   if [ ! -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
     echo ""
-    echo "  SSL certificate not found for $DOMAIN"
-    echo "  Make sure DNS is pointing to $SERVER_IP"
-    echo "  Then run:"
-    echo "    sudo certbot certonly --webroot -w /var/www/certbot -d $DOMAIN -d www.$DOMAIN"
+    echo "  SSL certificate not found."
+    echo "  Make sure DNS A Record points to $SERVER_IP"
     echo ""
+
+    # Try to get certificate
+    echo "  Requesting SSL certificate..."
+    certbot certonly --webroot \
+      -w /var/www/certbot \
+      -d "$DOMAIN" -d "www.$DOMAIN" \
+      --email "$EMAIL" \
+      --agree-tos \
+      --non-interactive || {
+        echo ""
+        echo "  ⚠️  SSL certificate request failed."
+        echo "  Make sure DNS is pointing to $SERVER_IP, then run:"
+        echo "    sudo certbot certonly --webroot -w /var/www/certbot -d $DOMAIN -d www.$DOMAIN --email $EMAIL --agree-tos"
+        echo ""
+        echo "  Continuing without SSL for now..."
+      }
   fi
 
-  # Add certbot renewal cron
+  # Apply full Nginx config (HTTP → HTTPS redirect + HTTPS proxy)
+  if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
+    echo "  Applying production Nginx config with SSL..."
+    sed "s/DOMAIN_ANDA/$DOMAIN/g" nginx/yorfinance.conf > /etc/nginx/sites-available/yorfinance
+    nginx -t && systemctl reload nginx
+    echo "  Nginx HTTPS configured."
+  fi
+
+  # Setup certbot auto-renewal cron
   if ! crontab -l 2>/dev/null | grep -q certbot; then
     (crontab -l 2>/dev/null; echo "0 3 * * * certbot renew --quiet --post-hook 'systemctl reload nginx'") | crontab -
     echo "  Certbot auto-renewal cron added."
   fi
+else
+  echo ""
+  echo "[4/5] No domain specified, skipping Nginx config."
 fi
 
+# ---- 5. Summary ----
+echo ""
+echo "[5/5] Done!"
 echo ""
 echo "=========================================="
 echo "  Deploy Complete!"
 echo "=========================================="
 echo ""
 echo "  App:       http://localhost:3000"
-echo "  Landing:   http://localhost:3000/web/index.html"
-echo "  API Docs:  http://localhost:3000/api-docs"
 echo "  Health:    http://localhost:3000/health"
+echo "  API Docs:  http://localhost:3000/api-docs"
+echo "  Landing:   http://localhost:3000/web/index.html"
 echo ""
 if [ -n "$DOMAIN" ]; then
-  echo "  Domain:    https://$DOMAIN"
+  if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
+    echo "  Website:   https://$DOMAIN"
+  else
+    echo "  Website:   http://$DOMAIN (SSL pending)"
+  fi
 fi
 echo ""
-echo "  Logs: docker compose logs -f app"
-echo "  Stop:  docker compose down"
+echo "  Logs:      docker compose logs -f app"
+echo "  Restart:   docker compose restart app"
+echo "  Stop:      docker compose down"
+echo "  Update:    git pull && docker compose up -d --build"
 echo ""

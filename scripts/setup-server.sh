@@ -1,8 +1,9 @@
 #!/bin/bash
 # ============================================================
-# YorFinance — VPS Setup Script (run once)
-# OS: Ubuntu 22.04/24.04
-# Usage: sudo bash scripts/setup-server.sh
+# YorFinance — Setup Server (run once)
+# Installs: Docker, Nginx, Certbot, UFW
+# Configures: Nginx HTTP proxy, firewall
+# Usage: sudo bash scripts/setup-server.sh <domain> <email>
 # ============================================================
 set -euo pipefail
 
@@ -11,86 +12,87 @@ EMAIL="${2:-}"
 
 if [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
   echo "Usage: sudo bash scripts/setup-server.sh <domain> <email>"
-  echo "Example: sudo bash scripts/setup-server.sh yorfinance.com admin@yorfinance.com"
+  echo ""
+  echo "Example:"
+  echo "  sudo bash scripts/setup-server.sh yorfinance.tech yoriaditya17@gmail.com"
   exit 1
 fi
 
 echo "=========================================="
-echo "  YorFinance VPS Setup"
-echo "  Domain: $DOMAIN"
-echo "  Email:  $EMAIL"
+echo "  YorFinance — Server Setup"
+echo "  Domain:  $DOMAIN"
+echo "  Email:   $EMAIL"
 echo "=========================================="
 
 # ---- 1. System Update ----
 echo ""
-echo "[1/7] Updating system..."
+echo "[1/6] Updating system..."
 apt update -qq && apt upgrade -y -qq
 
 # ---- 2. Install Docker ----
 echo ""
-echo "[2/7] Installing Docker..."
+echo "[2/6] Installing Docker..."
 if ! command -v docker &> /dev/null; then
   curl -fsSL https://get.docker.com | sh
   systemctl enable --now docker
-  echo "Docker installed."
+  echo "  Docker installed."
 else
-  echo "Docker already installed."
+  echo "  Docker already installed."
 fi
 
 # ---- 3. Install Docker Compose plugin ----
 echo ""
-echo "[3/7] Checking Docker Compose..."
-docker compose version || {
-  echo "Installing Docker Compose plugin..."
+echo "[3/6] Checking Docker Compose..."
+if docker compose version &> /dev/null; then
+  echo "  Docker Compose ready."
+else
+  echo "  Installing Docker Compose plugin..."
   apt install -y docker-compose-plugin
-}
+fi
 
-# ---- 4. Install Nginx ----
+# ---- 4. Install Nginx + Certbot ----
 echo ""
-echo "[4/7] Installing Nginx..."
+echo "[4/6] Installing Nginx & Certbot..."
 if ! command -v nginx &> /dev/null; then
   apt install -y nginx
   systemctl enable nginx
-  echo "Nginx installed."
+  echo "  Nginx installed."
 else
-  echo "Nginx already installed."
+  echo "  Nginx already installed."
 fi
 
-# ---- 5. Install Certbot ----
-echo ""
-echo "[5/7] Installing Certbot..."
 if ! command -v certbot &> /dev/null; then
   apt install -y certbot python3-certbot-nginx
-  echo "Certbot installed."
+  echo "  Certbot installed."
 else
-  echo "Certbot already installed."
+  echo "  Certbot already installed."
 fi
 
-# ---- 6. Setup Firewall ----
+# ---- 5. Setup Firewall ----
 echo ""
-echo "[6/7] Configuring firewall (UFW)..."
+echo "[5/6] Configuring firewall (UFW)..."
 if command -v ufw &> /dev/null; then
   ufw allow OpenSSH >/dev/null 2>&1 || true
   ufw allow 'Nginx Full' >/dev/null 2>&1 || true
   ufw --force enable >/dev/null 2>&1 || true
-  echo "Firewall configured: SSH + HTTP + HTTPS"
+  echo "  Firewall: SSH + HTTP + HTTPS allowed."
 else
-  echo "UFW not found, skipping firewall."
+  echo "  UFW not found, skipping."
 fi
 
-# ---- 7. Setup Nginx config ----
+# ---- 6. Setup Nginx (HTTP only,暂时 for certbot) ----
 echo ""
-echo "[7/7] Configuring Nginx..."
+echo "[6/6] Configuring Nginx..."
 
-# Create certbot webroot
 mkdir -p /var/www/certbot
 
-# Temp config for initial cert request (HTTP only)
-cat > /etc/nginx/sites-available/yorfinance <<NGINX_TEMP
+# Temporary HTTP-only config for certbot challenge + initial access
+cat > /etc/nginx/sites-available/yorfinance <<NGINX_CONF
+# HTTP — Certbot challenge + proxy
 server {
     listen 80;
     listen [::]:80;
-    server_name $DOMAIN;
+    server_name $DOMAIN www.$DOMAIN;
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -103,9 +105,11 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
     }
 }
-NGINX_TEMP
+NGINX_CONF
 
 ln -sf /etc/nginx/sites-available/yorfinance /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
@@ -116,16 +120,18 @@ echo "=========================================="
 echo "  Setup Complete!"
 echo "=========================================="
 echo ""
-echo "Next steps:"
+echo "  Server IP: $(curl -s ifconfig.me)"
 echo ""
-echo "  1. Point DNS to this server's IP:"
-echo "     A Record:    $DOMAIN → $(curl -s ifconfig.me)"
-echo "     CNAME:       www.$DOMAIN → $DOMAIN"
+echo "  Next steps:"
 echo ""
-echo "  2. Wait for DNS propagation (5-30 min), then run:"
-echo "     sudo certbot certonly --webroot -w /var/www/certbot -d $DOMAIN -d www.$DOMAIN --email $EMAIL --agree-tos"
+echo "  1. Point DNS to this server:"
+echo "     A Record:    @       → $(curl -s ifconfig.me)"
+echo "     CNAME:       www     → $DOMAIN"
+echo ""
+echo "  2. Wait for DNS propagation (5-30 min), verify with:"
+echo "     dig $DOMAIN"
 echo ""
 echo "  3. Deploy the app:"
-echo "     cd /opt/yorfinance"
-echo "     bash scripts/deploy.sh $DOMAIN"
+echo "     cd $APP_DIR"
+echo "     bash scripts/deploy.sh $DOMAIN $EMAIL"
 echo ""
