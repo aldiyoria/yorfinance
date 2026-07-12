@@ -4,9 +4,13 @@ const logger = require('./utils/logger');
 const { connectDb, disconnectDb } = require('./db/prisma');
 const { initTelegram } = require('./services/telegram.service');
 const { verifyConnection: verifySmtp } = require('./services/email.service');
+const { seedDefaults: seedPackages } = require('./services/package.service');
 
 async function bootstrap() {
   await connectDb();
+
+  // Seed default packages jika belum ada
+  await seedPackages();
 
   // Verifikasi koneksi SMTP
   await verifySmtp();

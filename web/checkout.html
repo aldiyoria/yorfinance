@@ -46,13 +46,7 @@
 
           <div class="form-group">
             <label>Paket</label>
-            <div class="plan-card plan-active">
-              <div class="plan-info">
-                <div class="plan-name">Basic</div>
-                <div class="plan-desc">Transaksi unlimited + Google Sheets pribadi</div>
-              </div>
-              <div class="plan-price">Rp29.000<span>/bln</span></div>
-            </div>
+            <div id="plan-options"></div>
           </div>
 
           <button type="submit" class="btn btn-primary btn-lg btn-block" id="submitBtn">
@@ -67,12 +61,12 @@
       </div>
 
       <!-- Right: Summary -->
-      <div class="checkout-summary">
+      <div class="checkout-summary" id="checkout-summary">
         <h3>Ringkasan Pesanan</h3>
 
         <div class="summary-item">
-          <span>Paket Basic (1 bulan)</span>
-          <span>Rp29.000</span>
+          <span id="summary-plan-name">Paket —</span>
+          <span id="summary-plan-price">—</span>
         </div>
         <div class="summary-item">
           <span>Biaya admin</span>
@@ -83,19 +77,12 @@
 
         <div class="summary-item summary-total">
           <span>Total</span>
-          <span>Rp29.000</span>
+          <span id="summary-total">—</span>
         </div>
 
-        <div class="summary-features">
+        <div class="summary-features" id="summary-features">
           <h4>Yang Anda dapatkan:</h4>
-          <ul>
-            <li>&#10003; Catat transaksi via Telegram</li>
-            <li>&#10003; Foto struk (AI ekstrak)</li>
-            <li>&#10003; Transaksi unlimited</li>
-            <li>&#10003; 1 Google Sheet pribadi</li>
-            <li>&#10003; Ringkasan bulanan</li>
-            <li>&#10003; Kategori otomatis</li>
-          </ul>
+          <ul></ul>
         </div>
 
         <div class="summary-guarantee">

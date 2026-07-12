@@ -7,7 +7,7 @@ set -euo pipefail
 
 DOMAIN="${1:-}"
 APP_DIR="/opt/yorfinance"
-REPO="https://github.com/YORIDORI/mankeu.git"
+REPO="https://github.com/aldiyoria/yorfinance.git"
 
 echo "=========================================="
 echo "  YorFinance Deploy"
@@ -15,19 +15,19 @@ echo "=========================================="
 
 # ---- 1. Clone or pull ----
 if [ ! -d "$APP_DIR/.git" ]; then
-  echo "[1/5] Cloning repository..."
+  echo "[1/4] Cloning repository..."
   mkdir -p /opt
   git clone "$REPO" "$APP_DIR"
 else
-  echo "[1/5] Pulling latest changes..."
+  echo "[1/4] Pulling latest changes..."
   cd "$APP_DIR"
-  git pull origin main
+  git pull origin master
 fi
 
 cd "$APP_DIR"
 
 # ---- 2. Setup .env ----
-echo "[2/5] Checking .env..."
+echo "[2/4] Checking .env..."
 if [ ! -f .env ]; then
   cp .env.example .env
   echo ""
@@ -38,7 +38,6 @@ if [ ! -f .env ]; then
   echo "  Required variables:"
   echo "    - TELEGRAM_BOT_TOKEN"
   echo "    - OPENAI_API_KEY"
-  echo "    - GOOGLE_SPREADSHEET_ID"
   echo "    - SMTP_USER + SMTP_PASS"
   echo "    - ADMIN_API_KEY"
   echo "    - DB_PASSWORD (same as POSTGRES_PASSWORD)"
@@ -46,25 +45,13 @@ if [ ! -f .env ]; then
   exit 1
 fi
 
-# ---- 3. Setup credentials ----
-echo "[3/5] Checking Google credentials..."
-if [ ! -f credentials/google-service-account.json ]; then
-  mkdir -p credentials
-  echo ""
-  echo "  ⚠️  Google Service Account not found!"
-  echo "  Place your JSON key at:"
-  echo "    $APP_DIR/credentials/google-service-account.json"
-  echo ""
-  exit 1
-fi
-
-# ---- 4. Build & start ----
-echo "[4/5] Building and starting containers..."
+# ---- 3. Build & start ----
+echo "[3/3] Building and starting containers..."
 docker compose up -d --build
 
-# ---- 5. Setup Nginx + SSL ----
+# ---- 4. Setup Nginx + SSL ----
 if [ -n "$DOMAIN" ]; then
-  echo "[5/5] Configuring Nginx for $DOMAIN..."
+  echo "[4/4] Configuring Nginx for $DOMAIN..."
 
   # Get server IP
   SERVER_IP=$(curl -s ifconfig.me)

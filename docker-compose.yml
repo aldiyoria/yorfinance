@@ -34,6 +34,11 @@ services:
       NODE_ENV: production
       PORT: "3000"
       DATABASE_URL: postgresql://yorfinance:${DB_PASSWORD:-yorfinance_secret}@db:5432/mankeu?schema=public
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: yorfinance
+      PGPASSWORD: ${DB_PASSWORD:-yorfinance_secret}
+      PGDATABASE: mankeu
       TZ: Asia/Jakarta
     env_file:
       - .env

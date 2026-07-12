@@ -37,10 +37,6 @@ const env = {
     from: process.env.SMTP_FROM || 'YorFinance <noreply@yorfinance.com>',
   },
 
-  google: {
-    spreadsheetId: required('GOOGLE_SPREADSHEET_ID'),
-  },
-
   doku: {
     clientId: process.env.DOKU_CLIENT_ID || '',
     secretKey: process.env.DOKU_SECRET_KEY || '',

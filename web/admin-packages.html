@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Kelola Paket</title>
+  <link rel="icon" type="image/png" href="/public/asset/img/logo.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --bg: #f5f7fa; --surface: #ffffff; --text: #1a1d21; --text-secondary: #6b7280; --primary: #2563eb; --green: #10b981; --red: #ef4444; --yellow: #f59e0b; --border: #e5e7eb; --radius: 12px; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 32px 24px; }
+    h1 { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+    .subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 32px; }
+
+    .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; border: none; transition: all 0.15s; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-sm { padding: 6px 14px; font-size: 12px; }
+    .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--bg); }
+    .btn-danger { background: var(--red); color: white; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-success { background: var(--green); color: white; }
+    .btn-warning { background: var(--yellow); color: white; }
+    .btn-block { width: 100%; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+
+    .package-card { border: 2px solid var(--border); transition: border-color 0.2s; }
+    .package-card.inactive { opacity: 0.5; }
+    .package-card .pkg-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .package-card .pkg-name { font-size: 18px; font-weight: 700; }
+    .package-card .pkg-slug { font-size: 12px; color: var(--text-secondary); background: var(--bg); padding: 2px 8px; border-radius: 4px; }
+    .package-card .pkg-price { font-size: 24px; font-weight: 800; color: var(--primary); }
+    .package-card .pkg-price span { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
+    .package-card .pkg-meta { display: flex; gap: 12px; margin: 8px 0 12px; font-size: 13px; color: var(--text-secondary); }
+    .package-card .pkg-features { list-style: none; margin: 12px 0; }
+    .package-card .pkg-features li { font-size: 13px; padding: 4px 0; }
+    .package-card .pkg-features li::before { content: '✓ '; color: var(--green); font-weight: 700; }
+    .package-card .pkg-actions { display: flex; gap: 8px; margin-top: 16px; }
+
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .badge-active { background: #ecfdf5; color: var(--green); }
+    .badge-inactive { background: #fef2f2; color: var(--red); }
+    .badge-popular { background: #eff6ff; color: var(--primary); }
+
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: var(--surface); border-radius: var(--radius); padding: 32px; width: 90%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
+    .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary); }
+    .form-group input, .form-group textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+    .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .form-group small { display: block; margin-top: 4px; font-size: 12px; color: var(--text-secondary); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-check { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .form-check input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); }
+    .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+
+    .features-input { display: flex; flex-direction: column; gap: 8px; }
+    .feature-row { display: flex; gap: 8px; }
+    .feature-row input { flex: 1; }
+    .feature-row .btn-remove { background: none; border: none; color: var(--red); cursor: pointer; font-size: 18px; padding: 4px; }
+    .add-feature-btn { background: none; border: 1px dashed var(--border); padding: 8px; border-radius: 8px; color: var(--text-secondary); cursor: pointer; font-size: 13px; text-align: center; }
+    .add-feature-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+    .empty-state { text-align: center; padding: 48px; color: var(--text-secondary); }
+    .empty-state p { font-size: 14px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-row">
+      <div>
+        <h1>Kelola Paket</h1>
+        <p class="subtitle">Atur paket langganan, harga, dan fitur yang ditawarkan.</p>
+      </div>
+      <button class="btn btn-primary" onclick="openModal()">+ Tambah Paket</button>
+    </div>
+
+    <div id="package-list">
+      <div class="empty-state" id="empty-state" style="display:none">
+        <p>Belum ada paket.</p>
+        <button class="btn btn-primary btn-sm" onclick="openModal()" style="margin-top:12px">Tambah Paket Pertama</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <h2 id="modal-title">Tambah Paket</h2>
+      <form id="package-form">
+        <input type="hidden" id="pkg-id">
+
+        <div class="form-group">
+          <label>Slug *</label>
+          <input type="text" id="pkg-slug" placeholder="basic, premium, business" required>
+          <small>Huruf kecil, angka, dan dash saja. Contoh: "premium"</small>
+        </div>
+
+        <div class="form-group">
+          <label>Nama Paket *</label>
+          <input type="text" id="pkg-name" placeholder="Basic, Premium, Business" required>
+        </div>
+
+        <div class="form-group">
+          <label>Deskripsi</label>
+          <input type="text" id="pkg-description" placeholder="Paket standar untuk pribadi">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Harga (Rp) *</label>
+            <input type="number" id="pkg-price" placeholder="29000" min="0" required>
+          </div>
+          <div class="form-group">
+            <label>Durasi (hari)</label>
+            <input type="number" id="pkg-duration" placeholder="30" min="1" value="30">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Fitur</label>
+          <div class="features-input" id="features-input">
+          </div>
+          <button type="button" class="add-feature-btn" onclick="addFeatureRow()">+ Tambah Fitur</button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-check">
+            <input type="checkbox" id="pkg-active" checked>
+            <label for="pkg-active" style="margin:0">Aktif</label>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" id="pkg-popular">
+            <label for="pkg-popular" style="margin:0">Populer (highlight)</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Urutan Tampil</label>
+          <input type="number" id="pkg-sort" placeholder="0" min="0" value="0">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" onclick="closeModal()">Batal</button>
+          <button type="submit" class="btn btn-primary" id="save-btn">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API = window.location.origin;
+    const ADMIN_KEY = prompt('Masukkan Admin API Key:');
+    let packages = [];
+
+    function headers() {
+      return {
+        'Content-Type': 'application/json',
+        'X-API-Key': ADMIN_KEY,
+      };
+    }
+
+    async function loadPackages() {
+      try {
+        const res = await fetch(`${API}/api/admin/packages`, { headers: headers() });
+        if (!res.ok) throw new Error('Gagal load paket');
+        const data = await res.json();
+        packages = data.packages || [];
+        renderPackages();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    function renderPackages() {
+      const container = document.getElementById('package-list');
+      const emptyState = document.getElementById('empty-state');
+
+      if (packages.length === 0) {
+        container.innerHTML = '';
+        container.appendChild(emptyState);
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+
+      container.innerHTML = packages.map((pkg) => `
+        <div class="card package-card ${pkg.isActive ? '' : 'inactive'}">
+          <div class="pkg-header">
+            <div>
+              <span class="pkg-name">${pkg.name}</span>
+              <span class="pkg-slug">${pkg.slug}</span>
+              ${pkg.isPopular ? '<span class="badge badge-popular">Populer</span>' : ''}
+              <span class="badge ${pkg.isActive ? 'badge-active' : 'badge-inactive'}">${pkg.isActive ? 'Aktif' : 'Nonaktif'}</span>
+            </div>
+            <div class="pkg-price">Rp${pkg.price.toLocaleString('id-ID')}<span>/bln</span></div>
+          </div>
+          ${pkg.description ? `<p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">${pkg.description}</p>` : ''}
+          <div class="pkg-meta">
+            <span>Durasi: ${pkg.durationDays} hari</span>
+            <span>Urutan: ${pkg.sortOrder}</span>
+          </div>
+          ${pkg.features.length > 0 ? `
+            <ul class="pkg-features">
+              ${pkg.features.map(f => `<li>${f}</li>`).join('')}
+            </ul>
+          ` : ''}
+          <div class="pkg-actions">
+            <button class="btn btn-sm btn-ghost" onclick="editPkg('${pkg.id}')">Edit</button>
+            <button class="btn btn-sm ${pkg.isActive ? 'btn-warning' : 'btn-success'}" onclick="togglePkg('${pkg.id}')">
+              ${pkg.isActive ? 'Nonaktifkan' : 'Aktifkan'}
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="deletePkg('${pkg.id}', '${pkg.name}')">Hapus</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openModal(pkg) {
+      document.getElementById('modal').classList.add('active');
+      document.getElementById('modal-title').textContent = pkg ? 'Edit Paket' : 'Tambah Paket';
+      document.getElementById('pkg-id').value = pkg ? pkg.id : '';
+      document.getElementById('pkg-slug').value = pkg ? pkg.slug : '';
+      document.getElementById('pkg-name').value = pkg ? pkg.name : '';
+      document.getElementById('pkg-description').value = pkg ? (pkg.description || '') : '';
+      document.getElementById('pkg-price').value = pkg ? pkg.price : '';
+      document.getElementById('pkg-duration').value = pkg ? pkg.durationDays : 30;
+      document.getElementById('pkg-active').checked = pkg ? pkg.isActive : true;
+      document.getElementById('pkg-popular').checked = pkg ? pkg.isPopular : false;
+      document.getElementById('pkg-sort').value = pkg ? pkg.sortOrder : 0;
+
+      const featuresInput = document.getElementById('features-input');
+      featuresInput.innerHTML = '';
+      if (pkg && pkg.features && pkg.features.length > 0) {
+        pkg.features.forEach(f => addFeatureRow(f));
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+      document.getElementById('package-form').reset();
+      document.getElementById('features-input').innerHTML = '';
+    }
+
+    function addFeatureRow(value) {
+      const container = document.getElementById('features-input');
+      const row = document.createElement('div');
+      row.className = 'feature-row';
+      row.innerHTML = `
+        <input type="text" class="feature-value" value="${value || ''}" placeholder="Fitur baru">
+        <button type="button" class="btn-remove" onclick="this.parentElement.remove()">×</button>
+      `;
+      container.appendChild(row);
+    }
+
+    function getFeatures() {
+      return Array.from(document.querySelectorAll('.feature-value'))
+        .map(el => el.value.trim())
+        .filter(v => v.length > 0);
+    }
+
+    function editPkg(id) {
+      const pkg = packages.find(p => p.id === id);
+      if (pkg) openModal(pkg);
+    }
+
+    async function togglePkg(id) {
+      try {
+        await fetch(`${API}/api/admin/packages/${id}/toggle`, {
+          method: 'PATCH',
+          headers: headers(),
+        });
+        await loadPackages();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function deletePkg(id, name) {
+      if (!confirm(`Hapus paket "${name}"?`)) return;
+      try {
+        await fetch(`${API}/api/admin/packages/${id}`, {
+          method: 'DELETE',
+          headers: headers(),
+        });
+        await loadPackages();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    document.getElementById('package-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('pkg-id').value;
+      const body = {
+        slug: document.getElementById('pkg-slug').value.trim(),
+        name: document.getElementById('pkg-name').value.trim(),
+        description: document.getElementById('pkg-description').value.trim() || null,
+        price: parseInt(document.getElementById('pkg-price').value, 10),
+        durationDays: parseInt(document.getElementById('pkg-duration').value, 10) || 30,
+        features: getFeatures(),
+        isActive: document.getElementById('pkg-active').checked,
+        isPopular: document.getElementById('pkg-popular').checked,
+        sortOrder: parseInt(document.getElementById('pkg-sort').value, 10) || 0,
+      };
+
+      try {
+        const url = id ? `${API}/api/admin/packages/${id}` : `${API}/api/admin/packages`;
+        const method = id ? 'PUT' : 'POST';
+        const res = await fetch(url, { method, headers: headers(), body: JSON.stringify(body) });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Gagal menyimpan');
+        }
+        closeModal();
+        await loadPackages();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    });
+
+    loadPackages();
+  </script>
+</body>
+</html>

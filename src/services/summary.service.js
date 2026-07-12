@@ -1,14 +1,14 @@
-const { readTransactions } = require('./sheets.service');
+const { readTransactions } = require('./transaction.service');
 const logger = require('../utils/logger');
 
 /**
  * Mengagregasi transaksi user menjadi ringkasan yang siap dikirim ke OpenAI
  * untuk dijawab secara natural. Menghitung total bulan & minggu berjalan
  * serta breakdown per kategori.
- * @param {object} opts { sheetName }
+ * @param {object} opts { userId }
  */
-async function buildAggregate({ sheetName }) {
-  const txs = await readTransactions({ sheetName });
+async function buildAggregate({ userId }) {
+  const txs = await readTransactions({ userId });
   const now = new Date();
 
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -175,13 +175,13 @@ function formatRupiah(n) {
 
 /**
  * Filter transaksi berdasarkan rentang tanggal.
- * @param {string} sheetName
+ * @param {string} userId
  * @param {Date} startDate - inclusive
  * @param {Date} endDate - inclusive (end of day)
  * @returns {Promise<Array>}
  */
-async function filterTransactionsByDate({ sheetName }, startDate, endDate) {
-  const txs = await readTransactions({ sheetName });
+async function filterTransactionsByDate({ userId }, startDate, endDate) {
+  const txs = await readTransactions({ userId });
   const endOfDay = new Date(endDate);
   endOfDay.setHours(23, 59, 59, 999);
 

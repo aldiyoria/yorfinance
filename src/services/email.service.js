@@ -19,23 +19,9 @@ const transporter = nodemailer.createTransport({
  * @param {string} [opts.name] - nama user
  * @param {string} opts.redeemCode - kode redeem 6 karakter
  * @param {string} [opts.plan] - paket langganan
- * @param {string} [opts.sheetName] - nama sheet/tab user
  */
-async function sendRedeemEmail({ to, name, redeemCode, plan = 'basic', sheetName }) {
+async function sendRedeemEmail({ to, name, redeemCode, plan = 'basic' }) {
   const subject = 'YorFinance - Kode Aktivasi Anda';
-
-  const sheetSection = sheetName ? `
-        <div style="background: #ecfdf5; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
-          <p style="color: #065f46; margin: 0 0 5px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Sheet Anda</p>
-          <p style="color: #1f2937; font-size: 18px; font-weight: bold; margin: 0;">${sheetName}</p>
-          <p style="color: #6b7280; margin: 10px 0 0; font-size: 12px;">Spreadsheet view-only — semua pencatatan melalui bot</p>
-        </div>
-  ` : '';
-
-  const sheetText = sheetName ? `
-Sheet Anda: ${sheetName}
-Spreadsheet view-only — semua pencatatan melalui bot
-  ` : '';
 
   const htmlBody = `
     <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
@@ -55,8 +41,6 @@ Spreadsheet view-only — semua pencatatan melalui bot
           <p style="color: #6b7280; margin: 0 0 5px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Kode Aktivasi</p>
           <p style="color: #1f2937; font-size: 32px; font-weight: bold; margin: 0; letter-spacing: 5px; font-family: monospace;">${redeemCode}</p>
         </div>
-        
-        ${sheetSection}
         
         <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0;">
           <p style="color: #374151; margin: 0 0 10px;"><strong>Cara Menggunakan:</strong></p>
@@ -93,7 +77,6 @@ Terima kasih telah berlangganan YorFinance!
 
 Kode aktivasi Anda: ${redeemCode}
 
-${sheetText}
 Cara Menggunakan:
 1. Buka Telegram, cari @YorFinanceBot
 2. Kirim /start

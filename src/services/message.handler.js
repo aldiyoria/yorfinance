@@ -1,7 +1,7 @@
 const logger = require('../utils/logger');
 const { checkAccess, redeemCode, ensureDashboardToken } = require('./subscription.service');
 const openaiService = require('./openai.service');
-const { appendTransaction, createUserSheet, readTransactions, readTransactionsWithIndex, deleteRow, updateRow, clearAllTransactions } = require('./sheets.service');
+const { appendTransaction, readTransactions, readTransactionsWithIndex, deleteTransaction, updateTransaction, clearAllTransactions } = require('./transaction.service');
 const { buildAggregate, buildStructuredSummary, filterTransactionsByDate, buildRecapList } = require('./summary.service');
 const { setBudget, checkBudget, deleteBudget } = require('./budget.service');
 const { prisma } = require('../db/prisma');
@@ -108,25 +108,16 @@ function parseNominal(str) {
   const s = str.toLowerCase().replace(/[^0-9.,jt rb]/g, '').trim();
   if (!s) return 0;
 
-  // Handle "jt" / "juta"
   if (s.includes('jt') || s.includes('juta')) {
     const num = parseFloat(s.replace(/[^0-9.,]/g, '').replace(',', '.'));
     return Math.round(num * 1000000);
   }
 
-  // Handle "rb" / "ribu"
   if (s.includes('rb') || s.includes('ribu')) {
     const num = parseFloat(s.replace(/[^0-9.,]/g, '').replace(',', '.'));
     return Math.round(num * 1000);
   }
 
-  // Handle "jt" / "juta" patterns
-  if (s.includes('jt') || s.includes('juta')) {
-    const num = parseFloat(s.replace(/[^0-9.,]/g, '').replace(',', '.'));
-    return Math.round(num * 1000000);
-  }
-
-  // Plain number — handle "800.000" or "800,000" or "800000"
   const cleaned = s.replace(/\./g, '').replace(',', '.');
   const num = parseFloat(cleaned);
   return isNaN(num) ? 0 : Math.round(num);
@@ -146,24 +137,6 @@ function formatTxReply(tx) {
 
 const REDEEM_CODE_REGEX = /^[A-Z0-9]{6}$/;
 
-/**
- * Pastikan user punya sheet di spreadsheet master. Jika belum, buat baru.
- * @returns {Promise<string>} sheetName
- */
-async function ensureSheet(user) {
-  if (user.sheetName) return user.sheetName;
-
-  const userName = user.name || user.email.split('@')[0];
-  const { sheetId, sheetName } = await createUserSheet({ userName });
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { sheetId, sheetName },
-  });
-  user.sheetId = sheetId;
-  user.sheetName = sheetName;
-  return sheetName;
-}
-
 function getHelpReply(text) {
   if (text.startsWith('/help') || text.startsWith('/perintah')) return HELP_MSG;
   if (text.startsWith('/kategori')) return CATEGORY_MSG;
@@ -181,9 +154,6 @@ function getHelpReply(text) {
   return null;
 }
 
-/**
- * Format numbered list transaksi untuk edit/hapus.
- */
 function formatNumberedTxList(txs, label) {
   if (txs.length === 0) {
     return `📋 *${label}*\n\nTidak ada transaksi.`;
@@ -200,14 +170,9 @@ function formatNumberedTxList(txs, label) {
   return lines.join('\n');
 }
 
-/**
- * Parse user reply for edit fields.
- * Contoh: "nominal 35000" atau "item Kopi Susu" atau "kategori Makanan"
- */
 function parseEditFields(text) {
   const lower = text.toLowerCase().trim();
 
-  // Try "field value" pattern
   const fieldMatch = lower.match(/^(nominal|item|kategori|tanggal|catatan|tipe)\s+(.+)$/i);
   if (!fieldMatch) return null;
 
@@ -222,7 +187,6 @@ function parseEditFields(text) {
     }
     case 'item':
       return { item: value };
-    case 'kategori':
     case 'kategori':
       return { category: value };
     case 'tanggal':
@@ -270,8 +234,7 @@ async function handleDeleteConfirm(chatId, text, state) {
   userStates.delete(chatId);
 
   if (answer === 'YA' || answer === 'Y' || answer === 'YES') {
-    const sheetName = state.sheetName;
-    await deleteRow(sheetName, state.selectedTx.rowIndex);
+    await deleteTransaction(state.selectedTx.id);
     return `✅ Transaksi "${state.selectedTx.item}" (${formatRupiah(state.selectedTx.amount)}) berhasil dihapus.`;
   }
 
@@ -310,7 +273,6 @@ async function handleEditSelect(chatId, text, state) {
 async function handleEditField(chatId, text, state) {
   const answer = text.trim();
 
-  // Cancel
   if (answer.toUpperCase() === 'BATAL' || answer.toUpperCase() === 'CANCEL') {
     userStates.delete(chatId);
     return '❌ Edit dibatalkan.';
@@ -331,8 +293,7 @@ async function handleEditField(chatId, text, state) {
     );
   }
 
-  const sheetName = state.sheetName;
-  await updateRow(sheetName, state.selectedTx.rowIndex, fields);
+  await updateTransaction(state.selectedTx.id, fields);
   userStates.delete(chatId);
 
   const updatedField = Object.entries(fields).map(([k, v]) => `${k}: ${typeof v === 'number' ? formatRupiah(v) : v}`).join(', ');
@@ -346,22 +307,13 @@ async function handleResetConfirm(chatId, text, state) {
   userStates.delete(chatId);
 
   if (answer === 'RESET') {
-    const sheetName = state.sheetName;
-    await clearAllTransactions(sheetName);
+    await clearAllTransactions(state.userId);
     return '✅ Semua data transaksi berhasil dihapus!\n\nMulai catat lagi dari awal.';
   }
 
   return '❌ Reset dibatalkan. Ketik /reset untuk coba lagi.';
 }
 
-/**
- * Inti pemrosesan pesan (provider-agnostic).
- * @param {object} input
- * @param {number|string} input.chatId - Telegram chat ID
- * @param {string} input.text - isi teks (caption bila media)
- * @param {{ base64: string, mimeType: string }|null} [input.media] - media gambar bila ada.
- * @returns {Promise<string>} teks balasan.
- */
 async function handleIncomingMessage({ chatId, text, media }) {
   const trimmed = (text || '').trim();
 
@@ -369,37 +321,22 @@ async function handleIncomingMessage({ chatId, text, media }) {
   const state = userStates.get(chatId);
 
   if (state) {
-    // Handle state-specific replies
-    if (state.action === 'delete_select') {
-      return handleDeleteSelect(chatId, trimmed, state);
-    }
-    if (state.action === 'delete_confirm') {
-      return handleDeleteConfirm(chatId, trimmed, state);
-    }
-    if (state.action === 'edit_select') {
-      return handleEditSelect(chatId, trimmed, state);
-    }
-    if (state.action === 'edit_field') {
-      return handleEditField(chatId, trimmed, state);
-    }
-    if (state.action === 'reset_confirm') {
-      return handleResetConfirm(chatId, trimmed, state);
-    }
+    if (state.action === 'delete_select') return handleDeleteSelect(chatId, trimmed, state);
+    if (state.action === 'delete_confirm') return handleDeleteConfirm(chatId, trimmed, state);
+    if (state.action === 'edit_select') return handleEditSelect(chatId, trimmed, state);
+    if (state.action === 'edit_field') return handleEditField(chatId, trimmed, state);
+    if (state.action === 'reset_confirm') return handleResetConfirm(chatId, trimmed, state);
   }
 
-  // /start → sapa + minta redeem code
+  // /start
   if (trimmed === '/start') {
     const { active, user, needsRedeem } = await checkAccess(chatId);
-    if (active) {
-      return 'Anda sudah berlangganan! Silakan mulai catat keuangan Anda. 💰\n\nKetik /help untuk lihat semua perintah.';
-    }
-    if (needsRedeem) {
-      return REDEEM_PROMPT_MSG;
-    }
+    if (active) return 'Anda sudah berlangganan! Silakan mulai catat keuangan Anda. 💰\n\nKetik /help untuk lihat semua perintah.';
+    if (needsRedeem) return REDEEM_PROMPT_MSG;
     return NOT_SUBSCRIBED_MSG + '\n\nAtau masukkan *redeem code* Anda di bawah ini.';
   }
 
-  // /status → cek status langganan
+  // /status
   if (trimmed.startsWith('/status')) {
     const { active, user, needsRedeem } = await checkAccess(chatId);
     if (!user) return NOT_SUBSCRIBED_MSG;
@@ -407,9 +344,7 @@ async function handleIncomingMessage({ chatId, text, media }) {
     if (!active) return EXPIRED_MSG;
 
     const sub = user.subscription;
-    const expiresAt = new Date(sub.expiresAt).toLocaleDateString('id-ID', {
-      day: 'numeric', month: 'long', year: 'numeric',
-    });
+    const expiresAt = new Date(sub.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     return (
       '📋 *Status Langganan*\n\n' +
       `• Status: *Aktif* ✅\n` +
@@ -421,44 +356,32 @@ async function handleIncomingMessage({ chatId, text, media }) {
   // Cek akses user
   const { active, user, needsRedeem } = await checkAccess(chatId);
 
-  // Belum punya subscription — coba cek apakah ini kode redeem
   if (!user) {
     if (!media && REDEEM_CODE_REGEX.test(trimmed.toUpperCase())) {
       const result = await redeemCode(chatId, trimmed.toUpperCase());
-      if (result.success) {
-        return result.message + '\n\nKetik /help untuk lihat semua perintah.';
-      }
+      if (result.success) return result.message + '\n\nKetik /help untuk lihat semua perintah.';
       return result.message + '\n\n' + NOT_SUBSCRIBED_MSG;
     }
     return NOT_SUBSCRIBED_MSG;
   }
 
-  // Punya subscription tapi belum redeem
   if (needsRedeem) {
     if (media) return REDEEM_PROMPT_MSG;
-
     const code = trimmed.toUpperCase();
     if (REDEEM_CODE_REGEX.test(code)) {
       const result = await redeemCode(chatId, code);
-      if (result.success) {
-        return result.message + '\n\nKetik /help untuk lihat semua perintah.';
-      }
+      if (result.success) return result.message + '\n\nKetik /help untuk lihat semua perintah.';
       return result.message + '\n\n' + REDEEM_PROMPT_MSG;
     }
     return REDEEM_PROMPT_MSG;
   }
 
-  // Subscription expired
-  if (!active) {
-    return EXPIRED_MSG;
-  }
+  if (!active) return EXPIRED_MSG;
 
-  // /tanggal with arguments — parse date range BEFORE helpReply check
+  // /tanggal with arguments
   if (trimmed.startsWith('/tanggal ')) {
-    const sheetName = await ensureSheet(user);
     const arg = trimmed.slice(9).trim();
 
-    // Parse "DD-MM-YYYY s/d DD-MM-YYYY" or "DD-MM-YYYY sd DD-MM-YYYY"
     const rangeMatch = arg.match(/(\d{1,2}-\d{1,2}-\d{4})\s*(?:s\/d|sd|-)\s*(\d{1,2}-\d{1,2}-\d{4})/i);
     if (rangeMatch) {
       const [_, startStr, endStr] = rangeMatch;
@@ -466,26 +389,19 @@ async function handleIncomingMessage({ chatId, text, media }) {
       const endParts = endStr.split('-');
       const startDate = new Date(startParts[2], startParts[1] - 1, startParts[0]);
       const endDate = new Date(endParts[2], endParts[1] - 1, endParts[0]);
-
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        return 'Format tanggal tidak valid. Gunakan format DD-MM-YYYY.';
-      }
-
-      const txs = await filterTransactionsByDate({ sheetName }, startDate, endDate);
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return 'Format tanggal tidak valid. Gunakan format DD-MM-YYYY.';
+      const txs = await filterTransactionsByDate({ userId: user.id }, startDate, endDate);
       const sLabel = startDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
       const eLabel = endDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
       return buildRecapList(txs, `${sLabel} - ${eLabel}`);
     }
 
-    // Single date: "DD-MM-YYYY"
     const singleMatch = arg.match(/(\d{1,2}-\d{1,2}-\d{4})/);
     if (singleMatch) {
       const parts = singleMatch[1].split('-');
       const date = new Date(parts[2], parts[1] - 1, parts[0]);
-      if (isNaN(date.getTime())) {
-        return 'Format tanggal tidak valid. Gunakan format DD-MM-YYYY.';
-      }
-      const txs = await filterTransactionsByDate({ sheetName }, date, date);
+      if (isNaN(date.getTime())) return 'Format tanggal tidak valid. Gunakan format DD-MM-YYYY.';
+      const txs = await filterTransactionsByDate({ userId: user.id }, date, date);
       const label = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       return buildRecapList(txs, label);
     }
@@ -497,42 +413,35 @@ async function handleIncomingMessage({ chatId, text, media }) {
   const helpReply = getHelpReply(trimmed);
   if (helpReply) {
     if (helpReply === '__CHECK_BUDGET__') {
-      // /budget command — cek sisa budget
-      const sheetName = await ensureSheet(user);
-      const txData = await readTransactions({ sheetName });
+      const txData = await readTransactions({ userId: user.id });
       const result = await checkBudget(user.id, txData);
       return result.message;
     }
     if (helpReply === '__RECAP__') {
-      // /rekap command — rekap keuangan bulanan
-      const sheetName = await ensureSheet(user);
-      const aggregate = await buildAggregate({ sheetName });
+      const aggregate = await buildAggregate({ userId: user.id });
       return buildStructuredSummary(aggregate);
     }
     if (helpReply === '__RECAP_HARI__') {
-      const sheetName = await ensureSheet(user);
       const now = new Date();
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const txs = await filterTransactionsByDate({ sheetName }, startOfDay, now);
+      const txs = await filterTransactionsByDate({ userId: user.id }, startOfDay, now);
       const label = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       return buildRecapList(txs, label);
     }
     if (helpReply === '__RECAP_MINGGU__') {
-      const sheetName = await ensureSheet(user);
       const now = new Date();
       const startOfWeek = new Date(now);
       startOfWeek.setDate(now.getDate() - ((now.getDay() + 6) % 7));
       startOfWeek.setHours(0, 0, 0, 0);
-      const txs = await filterTransactionsByDate({ sheetName }, startOfWeek, now);
+      const txs = await filterTransactionsByDate({ userId: user.id }, startOfWeek, now);
       const startStr = startOfWeek.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
       const endStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
       return buildRecapList(txs, `${startStr} - ${endStr}`);
     }
     if (helpReply === '__RECAP_BULAN__') {
-      const sheetName = await ensureSheet(user);
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const txs = await filterTransactionsByDate({ sheetName }, startOfMonth, now);
+      const txs = await filterTransactionsByDate({ userId: user.id }, startOfMonth, now);
       const label = now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
       return buildRecapList(txs, label);
     }
@@ -546,26 +455,24 @@ async function handleIncomingMessage({ chatId, text, media }) {
       return `__DASHBOARD_WEBAPP__${url}`;
     }
     if (helpReply === '__DELETE__') {
-      const sheetName = await ensureSheet(user);
-      const txs = await readTransactionsWithIndex({ sheetName });
+      const txs = await readTransactionsWithIndex({ userId: user.id });
       const recent = txs.slice(-15).reverse();
       if (recent.length === 0) return '📋 Tidak ada transaksi untuk dihapus.';
-      userStates.set(chatId, { action: 'delete_select', transactions: recent, sheetName });
+      userStates.set(chatId, { action: 'delete_select', transactions: recent, userId: user.id });
       return formatNumberedTxList(recent, 'Pilih Transaksi untuk Dihapus');
     }
     if (helpReply === '__EDIT__') {
-      const sheetName = await ensureSheet(user);
-      const txs = await readTransactionsWithIndex({ sheetName });
+      const txs = await readTransactionsWithIndex({ userId: user.id });
       const recent = txs.slice(-15).reverse();
       if (recent.length === 0) return '📋 Tidak ada transaksi untuk diedit.';
-      userStates.set(chatId, { action: 'edit_select', transactions: recent, sheetName });
+      userStates.set(chatId, { action: 'edit_select', transactions: recent, userId: user.id });
       return formatNumberedTxList(recent, 'Pilih Transaksi untuk Diedit');
     }
     if (helpReply === '__RESET__') {
-      userStates.set(chatId, { action: 'reset_confirm', sheetName: user.sheetName });
+      userStates.set(chatId, { action: 'reset_confirm', userId: user.id });
       return (
         '⚠️ *RESET SEMUA DATA*\n\n' +
-        'Semua transaksi Anda akan dihapus permanen dari spreadsheet.\n' +
+        'Semua transaksi Anda akan dihapus permanen dari database.\n' +
         'Tindakan ini *tidak bisa dibatalkan*.\n\n' +
         'Ketik *RESET* untuk konfirmasi atau *BATAL* untuk batal.'
       );
@@ -573,7 +480,7 @@ async function handleIncomingMessage({ chatId, text, media }) {
     return helpReply;
   }
 
-  // Handle "set budget [kategori] [nominal]" — bisa juga via natural language
+  // Handle "set budget" / "hapus budget"
   if (trimmed.toLowerCase().startsWith('set budget ') || trimmed.toLowerCase().startsWith('hapus budget ')) {
     const isDelete = trimmed.toLowerCase().startsWith('hapus budget ');
     const rest = trimmed.slice(isDelete ? 13 : 11).trim();
@@ -583,7 +490,6 @@ async function handleIncomingMessage({ chatId, text, media }) {
       return result.message;
     }
 
-    // Parse "kategori nominal" — contoh: "makanan 800rb" atau "makanan 800000"
     const parts = rest.split(/\s+/);
     if (parts.length >= 2) {
       const category = parts[0];
@@ -597,29 +503,15 @@ async function handleIncomingMessage({ chatId, text, media }) {
     return 'Format: `set budget [kategori] [nominal]`\nContoh: `set budget makanan 800000`';
   }
 
-  // "link" → return spreadsheet URL
+  // "link" → informasi transaksi tersimpan di DB
   if (trimmed.toLowerCase() === 'link') {
-    if (user.sheetName) {
-      const url = `https://docs.google.com/spreadsheets/d/${process.env.GOOGLE_SPREADSHEET_ID}/edit#gid=${user.sheetId}`;
-      return (
-        `📊 *Link Spreadsheet Anda:*\n\n` +
-        `${url}\n\n` +
-        `Sheet: *${user.sheetName}*\n` +
-        `📝 Spreadsheet ini *view-only* — semua pencatatan dilakukan melalui bot ini.`
-      );
-    }
-    return 'Link spreadsheet belum tersedia. Silakan hubungi admin.';
+    return '📊 *Data Transaksi*\n\nSemua transaksi Anda tersimpan di database dan bisa diakses melalui *dashboard*.\n\nKetik /dashboard untuk melihat grafik dan analisis keuangan.';
   }
 
-  // Aktif — proses normal
+  // Proses transaksi via foto
   if (media) {
-    const sheetName = await ensureSheet(user);
-    const tx = await openaiService.extractTransactionFromImage(
-      media.base64,
-      media.mimeType,
-      trimmed || ''
-    );
-    await appendTransaction({ sheetName }, tx);
+    const tx = await openaiService.extractTransactionFromImage(media.base64, media.mimeType, trimmed || '');
+    await appendTransaction({ userId: user.id }, tx);
     return formatTxReply(tx);
   }
 
@@ -629,29 +521,23 @@ async function handleIncomingMessage({ chatId, text, media }) {
   logger.info({ chatId, intent }, 'Intent terdeteksi');
 
   if (intent === 'add_transaction') {
-    const sheetName = await ensureSheet(user);
     const tx = await openaiService.extractTransactionFromText(trimmed);
-    await appendTransaction({ sheetName }, tx);
+    await appendTransaction({ userId: user.id }, tx);
     return formatTxReply(tx);
   }
 
   if (intent === 'summary_query') {
-    const sheetName = await ensureSheet(user);
-    const aggregate = await buildAggregate({ sheetName });
+    const aggregate = await buildAggregate({ userId: user.id });
     return openaiService.answerSummary(trimmed, aggregate);
   }
 
   if (intent === 'recap') {
-    const sheetName = await ensureSheet(user);
-    const aggregate = await buildAggregate({ sheetName });
+    const aggregate = await buildAggregate({ userId: user.id });
     return buildStructuredSummary(aggregate);
   }
 
   if (intent === 'set_budget') {
-    // Contoh: "budget makanan 800rb", "set budget transportasi 500000"
-    const rest = trimmed
-      .replace(/^(set\s+)?budget\s+/i, '')
-      .trim();
+    const rest = trimmed.replace(/^(set\s+)?budget\s+/i, '').trim();
     const parts = rest.split(/\s+/);
     if (parts.length >= 2) {
       const category = parts[0];
@@ -665,8 +551,7 @@ async function handleIncomingMessage({ chatId, text, media }) {
   }
 
   if (intent === 'check_budget') {
-    const sheetName = await ensureSheet(user);
-    const txData = await readTransactions({ sheetName });
+    const txData = await readTransactions({ userId: user.id });
     const result = await checkBudget(user.id, txData);
     return result.message;
   }

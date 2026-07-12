@@ -1,18 +1,36 @@
 const { prisma } = require('../db/prisma');
 const { createPayment, handleWebhook } = require('../services/payment.service');
+const packageService = require('../services/package.service');
 const logger = require('../utils/logger');
 
 /**
  * POST /api/payments/create
- * Body: { email, name?, plan? }
+ * Body: { email, name?, packageId? }
  * Buat DOKU Checkout → return payment URL untuk pembayaran.
  */
 async function createInvoice(req, res) {
   try {
-    const { email, name, plan } = req.body;
+    const { email, name, packageId, plan } = req.body;
 
     if (!email) {
       return res.status(400).json({ error: 'Field "email" wajib diisi.' });
+    }
+
+    // Resolve package
+    let pkg = null;
+    if (packageId) {
+      pkg = await packageService.getPackageById(packageId);
+      if (!pkg || !pkg.isActive) {
+        return res.status(400).json({ error: 'Paket tidak valid atau tidak aktif.' });
+      }
+    } else {
+      // Default to first active package (fallback for legacy calls)
+      const slug = plan || 'basic';
+      pkg = await packageService.getPackageBySlug(slug);
+      if (!pkg || !pkg.isActive) {
+        // Fallback hardcoded
+        pkg = { slug: 'basic', name: 'Basic', price: 29000, durationDays: 30 };
+      }
     }
 
     let user = await prisma.user.findFirst({ where: { email } });
@@ -27,8 +45,10 @@ async function createInvoice(req, res) {
       userId: user.id,
       email: user.email,
       name: user.name,
-      plan: plan || 'basic',
-      amount: 29000,
+      packageId: pkg.id || null,
+      plan: pkg.slug,
+      amount: pkg.price,
+      durationDays: pkg.durationDays,
     });
 
     return res.status(201).json({
@@ -40,6 +60,11 @@ async function createInvoice(req, res) {
         id: user.id,
         email: user.email,
         name: user.name,
+      },
+      package: {
+        slug: pkg.slug,
+        name: pkg.name,
+        price: pkg.price,
       },
     });
   } catch (err) {

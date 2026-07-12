@@ -1,5 +1,4 @@
 const { prisma } = require('../db/prisma');
-const { createUserSheet } = require('./sheets.service');
 const { sendRedeemEmail } = require('./email.service');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
@@ -93,27 +92,17 @@ async function redeemCode(chatId, code) {
 
   logger.info({ chatId, redeemCode: code }, 'Redeem berhasil');
 
-  // Auto-create sheet terproteksi jika belum punya
-  if (!user.sheetId) {
+  // Kirim email info aktivasi
+  try {
     const userName = user.name || user.email.split('@')[0];
-    const { sheetId, sheetName } = await createUserSheet({
-      userName,
+    await sendRedeemEmail({
+      to: user.email,
+      name: userName,
+      redeemCode: code.toUpperCase(),
+      plan: sub.plan || 'basic',
     });
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { sheetId, sheetName },
-    });
-
-    // Kirim email berisi info sheet
-    try {
-      await sendRedeemEmail({
-        to: user.email,
-        redeemCode: code.toUpperCase(),
-        sheetName,
-      });
-    } catch (err) {
-      logger.error({ err, email: user.email }, 'Gagal kirim email info sheet');
-    }
+  } catch (err) {
+    logger.error({ err, email: user.email }, 'Gagal kirim email info aktivasi');
   }
 
   return {

@@ -1,5 +1,5 @@
 const { prisma } = require('../db/prisma');
-const { readTransactions } = require('../services/sheets.service');
+const { readTransactions } = require('../services/transaction.service');
 const logger = require('../utils/logger');
 
 function formatRupiah(n) {
@@ -23,12 +23,8 @@ async function getDashboardData(req, res) {
       return res.status(404).json({ error: 'Invalid dashboard token' });
     }
 
-    if (!user.sheetName) {
-      return res.status(400).json({ error: 'Sheet not ready yet' });
-    }
-
     // Read all transactions
-    const txs = await readTransactions({ sheetName: user.sheetName });
+    const txs = await readTransactions({ userId: user.id });
 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);

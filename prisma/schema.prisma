@@ -27,15 +27,14 @@ model User {
   chatId         String?  @unique
   email          String
   name           String?
-  sheetId        Int?
-  sheetName      String?
   dashboardToken String?  @unique
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  subscription Subscription?
-  payments     Payment[]
-  budgets      Budget[]
+  subscription  Subscription?
+  payments      Payment[]
+  budgets       Budget[]
+  transactions  Transaction[]
 
   @@index([chatId])
   @@index([dashboardToken])
@@ -55,10 +54,32 @@ model Budget {
   @@index([userId, month])
 }
 
+model Package {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
+  description  String?
+  price        Int
+  durationDays Int      @default(30)
+  features     String[]
+  isActive     Boolean  @default(true)
+  isPopular    Boolean  @default(false)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@index([slug])
+  @@index([isActive])
+}
+
 model Subscription {
   id           String             @id @default(cuid())
   userId       String             @unique
   user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  packageId    String?
+  package      Package?           @relation(fields: [packageId], references: [id])
   status       SubscriptionStatus @default(PENDING)
   plan         String             @default("basic")
   redeemCode   String             @unique
@@ -69,6 +90,7 @@ model Subscription {
   updatedAt    DateTime           @updatedAt
 
   @@index([redeemCode])
+  @@index([packageId])
 }
 
 model Payment {
@@ -89,4 +111,22 @@ model Payment {
 
   @@index([externalId])
   @@index([userId])
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String   // format "YYYY-MM-DD"
+  type      String   // "income" | "expense"
+  category  String
+  item      String
+  amount    Int
+  note      String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, date])
+  @@index([userId, type])
 }

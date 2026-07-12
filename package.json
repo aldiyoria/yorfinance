@@ -1,7 +1,7 @@
 {
   "name": "yorfinance-bot",
   "version": "1.0.0",
-  "description": "SaaS Telegram Bot untuk manajemen keuangan pribadi (Telegram + OpenAI Gemini + Google Sheets + Prisma)",
+  "description": "SaaS Telegram Bot untuk manajemen keuangan pribadi (Telegram + OpenAI Gemini + PostgreSQL)",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
@@ -15,8 +15,7 @@
     "telegram",
     "saas",
     "finance",
-    "openai",
-    "google-sheets"
+    "openai"
   ],
   "author": "",
   "license": "MIT",
@@ -24,7 +23,6 @@
     "@prisma/client": "^5.18.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "googleapis": "^173.0.0",
     "node-telegram-bot-api": "^1.1.2",
     "nodemailer": "^9.0.3",
     "openai": "^4.56.0",

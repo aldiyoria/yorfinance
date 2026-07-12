@@ -46,19 +46,11 @@ Buka `.env` dan isi semua value (lihat `.env.example` untuk panduan). Yang wajib
 |----------|-----------|
 | `TELEGRAM_BOT_TOKEN` | Token dari @BotFather |
 | `OPENAI_API_KEY` | API key dari Google AI Studio |
-| `GOOGLE_SPREADSHEET_ID` | ID master spreadsheet |
 | `SMTP_USER` + `SMTP_PASS` | Gmail + App Password |
 | `ADMIN_API_KEY` | Secret acak untuk admin API |
 | `DB_PASSWORD` | Password PostgreSQL (buat sendiri) |
 
-### 4. Setup Google Service Account
-Buat file `credentials/google-service-account.json` (jangan di-commit):
-```bash
-mkdir -p credentials
-# Copy file JSON key dari Google Cloud Console ke sini
-```
-
-### 5. Jalankan!
+### 4. Jalankan!
 ```bash
 docker compose up -d
 ```
@@ -140,10 +132,6 @@ cd /opt/yorfinance
 # Isi .env dengan values produksi
 nano .env
 
-# Taruh Google credentials
-mkdir -p credentials
-# Upload google-service-account.json ke credentials/
-
 # Jalankan deploy
 bash scripts/deploy.sh yorfinance.com
 ```
@@ -208,22 +196,6 @@ npm install
 cp .env.example .env
 # Isi semua variabel di .env
 ```
-
-### Setup Google Sheets
-1. Buat spreadsheet baru, beri nama **"YorFinance Master"**.
-2. Tambah 1 baris header di kolom A–G:
-   ```
-   Tanggal | Tipe | Kategori | Item | Nominal | Catatan | Dicatat Pada
-   ```
-3. Buat sheet/tab bernama **"Template"** (copy header ke sini).
-4. Ambil spreadsheet ID dari URL: `https://docs.google.com/spreadsheets/d/{ID}/edit`
-5. Share ke service account: `yorfinance@yorfinance.iam.gserviceaccount.com` (Editor)
-
-### Setup Google Cloud Service Account
-1. [Google Cloud Console](https://console.cloud.google.com/) → Buat project "yorfinance".
-2. IAM & Admin → Service Accounts → Create: `yorfinance@yorfinance.iam.gserviceaccount.com`
-3. Keys → Add Key → Create new key → JSON.
-4. Simpan sebagai `credentials/google-service-account.json`.
 
 ### Setup Gemini API Key
 1. [Google AI Studio](https://aistudio.google.com/apikey) → Create API key.

@@ -14,7 +14,7 @@ RUN npx prisma generate
 # ===== Stage 2: Production =====
 FROM node:20-alpine
 
-RUN apk add --no-cache bash curl postgresql16-client
+RUN apk add --no-cache bash curl postgresql16-client openssl libstdc++
 
 WORKDIR /app
 

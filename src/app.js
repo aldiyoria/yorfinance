@@ -6,6 +6,8 @@ const subscriptionRoutes = require('./routes/subscription.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const sandboxRoutes = require('./routes/sandbox.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
+const adminPackageRoutes = require('./routes/admin-package.routes');
+const packageRoutes = require('./routes/package.routes');
 
 const app = express();
 
@@ -25,10 +27,16 @@ app.get('/api-docs.json', (_req, res) => {
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
 
+// Public Routes
+app.use('/api/packages', packageRoutes);
+
 // API Routes
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+
+// Admin Routes
+app.use('/api/admin/packages', adminPackageRoutes);
 
 // Sandbox Routes (hanya untuk development)
 if (process.env.NODE_ENV !== 'production') {

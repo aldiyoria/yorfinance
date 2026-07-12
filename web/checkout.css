@@ -89,8 +89,19 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border: 2px solid var(--primary);
+  border: 2px solid var(--border);
   border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.plan-card:hover {
+  border-color: #93c5fd;
+}
+
+.plan-card.plan-active {
+  border-color: var(--primary);
   background: var(--primary-light);
 }
 

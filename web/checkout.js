@@ -6,6 +6,90 @@ const btnText = submitBtn.querySelector('.btn-text');
 const btnLoading = submitBtn.querySelector('.btn-loading');
 const formWrapper = document.querySelector('.checkout-form-wrapper');
 
+let packages = [];
+let selectedPackage = null;
+
+// Load packages from DB
+async function loadPackages() {
+  try {
+    const res = await fetch(`${API_BASE}/api/packages`);
+    if (!res.ok) throw new Error('Gagal load paket');
+    const data = await res.json();
+    packages = data.packages || [];
+
+    if (packages.length === 0) {
+      // Fallback
+      packages = [{
+        id: null,
+        slug: 'basic',
+        name: 'Basic',
+        description: 'Paket standar untuk pribadi',
+        price: 29000,
+        durationDays: 30,
+        features: [
+          'Catat transaksi via chat',
+          'Foto struk (AI ekstrak)',
+          'Transaksi unlimited',
+          '1 Google Sheet pribadi',
+          'Ringkasan bulanan',
+          'Kategori otomatis',
+        ],
+        isPopular: true,
+      }];
+    }
+
+    // Default to first package
+    selectedPackage = packages[0];
+    renderPackageOptions();
+    updateSummary();
+  } catch (err) {
+    console.error('Failed to load packages:', err);
+    // Fallback
+    packages = [{
+      id: null, slug: 'basic', name: 'Basic', price: 29000, durationDays: 30,
+      features: ['Catat transaksi via chat', 'Foto struk (AI ekstrak)', 'Transaksi unlimited', '1 Google Sheet pribadi', 'Ringkasan bulanan', 'Kategori otomatis'],
+      isPopular: true,
+    }];
+    selectedPackage = packages[0];
+    renderPackageOptions();
+    updateSummary();
+  }
+}
+
+function renderPackageOptions() {
+  const container = document.getElementById('plan-options');
+  container.innerHTML = packages.map((pkg, i) => `
+    <div class="plan-card ${i === 0 ? 'plan-active' : ''}" data-idx="${i}" onclick="selectPlan(${i})">
+      <div class="plan-info">
+        <div class="plan-name">${pkg.name}</div>
+        <div class="plan-desc">${pkg.description || ''}</div>
+      </div>
+      <div class="plan-price">Rp${pkg.price.toLocaleString('id-ID')}<span>/bln</span></div>
+    </div>
+  `).join('');
+}
+
+function selectPlan(idx) {
+  selectedPackage = packages[idx];
+  document.querySelectorAll('.plan-card').forEach((el, i) => {
+    el.classList.toggle('plan-active', i === idx);
+  });
+  updateSummary();
+}
+
+function updateSummary() {
+  if (!selectedPackage) return;
+  document.getElementById('summary-plan-name').textContent = `Paket ${selectedPackage.name} (${selectedPackage.durationDays} hari)`;
+  document.getElementById('summary-plan-price').textContent = `Rp${selectedPackage.price.toLocaleString('id-ID')}`;
+  document.getElementById('summary-total').textContent = `Rp${selectedPackage.price.toLocaleString('id-ID')}`;
+
+  const featureList = document.querySelector('#summary-features ul');
+  if (featureList && selectedPackage.features) {
+    featureList.innerHTML = selectedPackage.features.map(f => `<li>&#10003; ${f}</li>`).join('');
+  }
+}
+
+// Submit
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -17,14 +101,26 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
+  if (!selectedPackage) {
+    showError('Pilih paket terlebih dahulu.');
+    return;
+  }
+
   setLoading(true);
   hideError();
 
   try {
+    const body = { email, name };
+    if (selectedPackage.id) {
+      body.packageId = selectedPackage.id;
+    } else {
+      body.plan = selectedPackage.slug;
+    }
+
     const res = await fetch(`${API_BASE}/api/payments/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, name, plan: 'basic' }),
+      body: JSON.stringify(body),
     });
 
     const data = await res.json();
@@ -40,7 +136,8 @@ form.addEventListener('submit', async (e) => {
         sessionId: data.sessionId,
         email: email,
         name: name,
-        amount: 29000,
+        amount: selectedPackage.price,
+        plan: selectedPackage.name,
         status: 'PENDING',
         createdAt: new Date().toISOString(),
       });
@@ -96,3 +193,5 @@ function showSuccess(paymentUrl, email) {
     </div>
   `;
 }
+
+loadPackages();

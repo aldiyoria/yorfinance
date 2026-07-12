@@ -331,7 +331,7 @@
         <h2>Simple & Transparan</h2>
         <p>Pilih paket yang sesuai kebutuhan Anda.</p>
       </div>
-      <div class="pricing-grid">
+      <div class="pricing-grid" id="pricing-grid">
         <div class="pricing-card pricing-popular">
           <div class="pricing-name">Basic</div>
           <div class="pricing-price">Rp29.000<span>/bulan</span></div>
@@ -346,24 +346,35 @@
           </ul>
           <a href="checkout.html" class="btn btn-primary btn-block">Pilih Basic</a>
         </div>
-        <div class="pricing-card pricing-soon">
-          <div class="pricing-badge-soon">Segera Hadir</div>
-          <div class="pricing-name">Business</div>
-          <div class="pricing-price">Coming Soon</div>
-          <div class="pricing-period">Untuk tim & UMKM</div>
-          <ul class="pricing-features">
-            <li>&#10003; Semua fitur Basic</li>
-            <li>&#10003; Multi user (hingga 5)</li>
-            <li>&#10003; Dashboard konsolidasi</li>
-            <li>&#10003; Kategori custom</li>
-            <li>&#10003; Voice recognition</li>
-            <li>&#10003; Dedicated support</li>
-          </ul>
-          <a href="#cta" class="btn btn-outline btn-block" disabled>Coming Soon</a>
-        </div>
       </div>
     </div>
   </section>
+
+  <script>
+  // Load active packages from DB
+  (async function() {
+    try {
+      const res = await fetch('/api/packages');
+      if (!res.ok) return;
+      const { packages } = await res.json();
+      if (!packages || packages.length === 0) return;
+
+      const grid = document.getElementById('pricing-grid');
+      grid.innerHTML = packages.map(pkg => `
+        <div class="pricing-card ${pkg.isPopular ? 'pricing-popular' : ''}">
+          ${pkg.isPopular ? '<div class="pricing-badge-soon" style="background:#eff6ff;color:#2563eb">Terpopuler</div>' : ''}
+          <div class="pricing-name">${pkg.name}</div>
+          <div class="pricing-price">Rp${pkg.price.toLocaleString('id-ID')}<span>/bulan</span></div>
+          <div class="pricing-period">${pkg.description || 'Durasi ' + pkg.durationDays + ' hari'}</div>
+          <ul class="pricing-features">
+            ${(pkg.features || []).map(f => `<li>&#10003; ${f}</li>`).join('')}
+          </ul>
+          <a href="checkout.html?package=${pkg.slug}" class="btn btn-primary btn-block">Pilih ${pkg.name}</a>
+        </div>
+      `).join('');
+    } catch (_) {}
+  })();
+  </script>
 
   <!-- FAQ -->
   <section class="faq" id="faq">
@@ -408,14 +419,29 @@
         <h2>Udah Capek Gak Tau<br>Kemana Uangmu Pergi?</h2>
         <p>Sekarang saatnya mulai kontrol keuangan. Cukup chat di Telegram, uangmu tercatat semua.</p>
         <div class="cta-actions">
-          <a href="checkout.html" class="btn btn-white btn-lg">
-            &#128172; Mulai Sekarang — Rp29.000/bulan
+          <a href="checkout.html" class="btn btn-white btn-lg" id="cta-btn">
+            &#128172; Mulai Sekarang
           </a>
         </div>
         <p class="cta-note">Tanpa aplikasi ribet. Tanpa data hilang. Semua ada di Google Sheets milikmu.</p>
       </div>
     </div>
   </section>
+
+  <script>
+  // Update CTA price from DB
+  (async function() {
+    try {
+      const res = await fetch('/api/packages');
+      if (!res.ok) return;
+      const { packages } = await res.json();
+      if (packages && packages.length > 0) {
+        const pkg = packages[0];
+        document.getElementById('cta-btn').innerHTML = `&#128172; Mulai Sekarang — Rp${pkg.price.toLocaleString('id-ID')}/bulan`;
+      }
+    } catch (_) {}
+  })();
+  </script>
 
   <!-- Footer -->
   <footer class="footer">

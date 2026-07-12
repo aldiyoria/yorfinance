@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const env = require('../config/env');
 const { prisma } = require('../db/prisma');
 const { sendRedeemEmail } = require('./email.service');
+const packageService = require('./package.service');
 const logger = require('../utils/logger');
 
 /**
@@ -67,7 +68,7 @@ function verifyNotificationSignature(headers, body, notificationPath) {
  * @param {object} opts { userId, email, name, plan, amount }
  * @returns {Promise<{ sessionId: string, paymentUrl: string, externalId: string }>}
  */
-async function createPayment({ userId, email, name, plan = 'basic', amount = 29000 }) {
+async function createPayment({ userId, email, name, packageId, plan = 'basic', amount = 29000, durationDays = 30 }) {
   const externalId = `YF-${userId}-${Date.now()}`;
   const invoiceNumber = externalId;
 
@@ -138,7 +139,7 @@ async function createPayment({ userId, email, name, plan = 'basic', amount = 290
     },
   });
 
-  logger.info({ externalId, sessionId, email, amount }, 'DOKU checkout dibuat');
+  logger.info({ externalId, sessionId, email, amount, plan, packageId }, 'DOKU checkout diburat');
 
   return {
     sessionId,
@@ -203,11 +204,20 @@ async function handleWebhook(headers, body, notificationPath) {
       return { success: false, error: 'User not found' };
     }
 
+    // Resolve plan slug and duration from package
+    const descMatch = payment.description?.match(/^YorFinance (\w+) —/);
+    const planSlug = descMatch ? descMatch[1] : 'basic';
+    let durationDays = 30;
+    try {
+      const pkg = await packageService.getPackageBySlug(planSlug);
+      if (pkg) durationDays = pkg.durationDays;
+    } catch (_) {}
+
     if (user.subscription) {
       const currentExpiry = user.subscription.expiresAt > new Date()
         ? user.subscription.expiresAt
         : new Date();
-      const newExpiry = new Date(currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const newExpiry = new Date(currentExpiry.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
       await prisma.subscription.update({
         where: { id: user.subscription.id },
@@ -236,10 +246,10 @@ async function handleWebhook(headers, body, notificationPath) {
       await prisma.subscription.create({
         data: {
           userId: user.id,
-          plan: 'basic',
+          plan: planSlug,
           redeemCode,
           status: 'PENDING',
-          expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+          expiresAt: new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000),
         },
       });
 
@@ -248,7 +258,7 @@ async function handleWebhook(headers, body, notificationPath) {
           to: user.email,
           name: user.name,
           redeemCode,
-          plan: 'basic',
+          plan: planSlug,
         });
         logger.info({ email: user.email, redeemCode }, 'Redeem code dikirim via email');
       } catch (err) {
