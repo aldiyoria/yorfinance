@@ -67,12 +67,19 @@ async function simulatePaymentCallback(req, res) {
 
     const updatedPayment = await prisma.payment.findUnique({
       where: { externalId },
-      include: {
-        user: {
-          include: { subscription: true },
-        },
-      },
+      include: { user: true },
     });
+
+    // Cari subscription terbaru milik user
+    let sub = null;
+    if (updatedPayment.user) {
+      const subs = await prisma.subscription.findMany({
+        where: { userId: updatedPayment.user.id },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      });
+      sub = subs[0] || null;
+    }
 
     return res.json({
       message: `Sandbox notification berhasil! Status: ${fakeBody.transaction.status}`,
@@ -84,10 +91,10 @@ async function simulatePaymentCallback(req, res) {
         paymentMethod: updatedPayment.paymentMethod,
         paymentChannel: updatedPayment.paymentChannel,
       },
-      subscription: updatedPayment.user.subscription ? {
-        status: updatedPayment.user.subscription.status,
-        redeemCode: updatedPayment.user.subscription.redeemCode,
-        expiresAt: updatedPayment.user.subscription.expiresAt,
+      subscription: sub ? {
+        status: sub.status,
+        redeemCode: sub.redeemCode,
+        expiresAt: sub.expiresAt,
       } : null,
     });
   } catch (err) {

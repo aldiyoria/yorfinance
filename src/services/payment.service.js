@@ -214,56 +214,43 @@ async function handleWebhook(headers, body, notificationPath) {
     } catch (_) {}
 
     if (user.subscription) {
-      const currentExpiry = user.subscription.expiresAt > new Date()
-        ? user.subscription.expiresAt
-        : new Date();
-      const newExpiry = new Date(currentExpiry.getTime() + durationDays * 24 * 60 * 60 * 1000);
+      // Jika sudah punya subscription (termasuk trial yang masih aktif),
+      // tetap buat subscription baru, jangan extend.
+      // User akan dapat redeem code baru untuk paket basic.
+    }
 
-      await prisma.subscription.update({
-        where: { id: user.subscription.id },
-        data: {
-          status: 'ACTIVE',
-          activatedAt: user.subscription.activatedAt || new Date(),
-          startedAt: user.subscription.startedAt || new Date(),
-          expiresAt: newExpiry,
-        },
+    const { generateRedeemCode } = require('./subscription.service');
+    let redeemCode = generateRedeemCode();
+
+    let attempts = 0;
+    while (attempts < 10) {
+      const existing = await prisma.subscription.findUnique({ where: { redeemCode } });
+      if (!existing) break;
+      redeemCode = generateRedeemCode();
+      attempts++;
+    }
+
+    const now = new Date();
+    const newSub = await prisma.subscription.create({
+      data: {
+        userId: user.id,
+        plan: planSlug,
+        redeemCode,
+        status: 'PENDING',
+        expiresAt: new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    try {
+      await sendRedeemEmail({
+        to: user.email,
+        name: user.name,
+        redeemCode,
+        plan: planSlug,
       });
-
-      logger.info({ userId, newExpiry }, 'Subscription diperpanjang');
-    } else {
-      const { generateRedeemCode } = require('./subscription.service');
-      let redeemCode = generateRedeemCode();
-
-      let attempts = 0;
-      while (attempts < 10) {
-        const existing = await prisma.subscription.findUnique({ where: { redeemCode } });
-        if (!existing) break;
-        redeemCode = generateRedeemCode();
-        attempts++;
-      }
-
-      const now = new Date();
-      await prisma.subscription.create({
-        data: {
-          userId: user.id,
-          plan: planSlug,
-          redeemCode,
-          status: 'PENDING',
-          expiresAt: new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000),
-        },
-      });
-
-      try {
-        await sendRedeemEmail({
-          to: user.email,
-          name: user.name,
-          redeemCode,
-          plan: planSlug,
-        });
-        logger.info({ email: user.email, redeemCode }, 'Redeem code dikirim via email');
-      } catch (err) {
-        logger.error({ err, email: user.email }, 'Gagal kirim email redeem code');
-      }
+      logger.info({ email: user.email, redeemCode }, 'Redeem code dikirim via email');
+    } catch (err) {
+      logger.error({ err, email: user.email }, 'Gagal kirim email redeem code');
     }
   } else if (status === 'FAILED') {
     await prisma.payment.update({

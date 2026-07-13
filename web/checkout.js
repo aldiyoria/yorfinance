@@ -30,7 +30,6 @@ async function loadPackages() {
           'Catat transaksi via chat',
           'Foto struk (AI ekstrak)',
           'Transaksi unlimited',
-          '1 Google Sheet pribadi',
           'Ringkasan bulanan',
           'Kategori otomatis',
         ],
@@ -47,7 +46,13 @@ async function loadPackages() {
     // Fallback
     packages = [{
       id: null, slug: 'basic', name: 'Basic', price: 29000, durationDays: 30,
-      features: ['Catat transaksi via chat', 'Foto struk (AI ekstrak)', 'Transaksi unlimited', '1 Google Sheet pribadi', 'Ringkasan bulanan', 'Kategori otomatis'],
+      features: [
+          'Catat transaksi via chat',
+          'Foto struk (AI ekstrak)',
+          'Transaksi unlimited',
+          'Ringkasan bulanan',
+          'Kategori otomatis',
+        ],
       isPopular: true,
     }];
     selectedPackage = packages[0];

@@ -8,6 +8,8 @@ const sandboxRoutes = require('./routes/sandbox.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const adminPackageRoutes = require('./routes/admin-package.routes');
 const packageRoutes = require('./routes/package.routes');
+const trialRoutes = require('./routes/trial.routes');
+const configRoutes = require('./routes/config.routes');
 
 const app = express();
 
@@ -29,6 +31,8 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptim
 
 // Public Routes
 app.use('/api/packages', packageRoutes);
+app.use('/api/trial', trialRoutes);
+app.use('/api/config', configRoutes);
 
 // API Routes
 app.use('/api/subscriptions', subscriptionRoutes);

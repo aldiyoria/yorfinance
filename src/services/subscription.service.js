@@ -16,30 +16,64 @@ function generateDashboardToken() {
 }
 
 /**
+ * Cari subscription yang harus dipakai user.
+ * Prioritas: ACTIVE + belum expired, urut dibuat terbaru.
+ */
+async function findActiveSubscription(userId) {
+  const subs = await prisma.subscription.findMany({
+    where: {
+      userId,
+      status: 'ACTIVE',
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 1,
+  });
+  return subs[0] || null;
+}
+
+/**
+ * Cari subscription PENDING (belum di-redeem) yang belum expired, urut terbaru.
+ */
+async function findPendingSubscription(userId) {
+  const subs = await prisma.subscription.findMany({
+    where: {
+      userId,
+      status: 'PENDING',
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 1,
+  });
+  return subs[0] || null;
+}
+
+/**
  * Cek apakah chatId Telegram punya subscription aktif.
  * @returns {Promise<{ active: boolean, user: object|null, needsRedeem: boolean }>}
  */
 async function checkAccess(chatId) {
   const user = await prisma.user.findUnique({
     where: { chatId: String(chatId) },
-    include: { subscription: true },
   });
 
   if (!user) return { active: false, user: null, needsRedeem: false };
 
-  if (!user.subscription) return { active: false, user, needsRedeem: false };
-
-  if (user.subscription.status === 'PENDING') {
+  const pendingSub = await findPendingSubscription(user.id);
+  if (pendingSub) {
     return { active: false, user, needsRedeem: true };
   }
 
-  const sub = user.subscription;
-  const isActive = sub.status === 'ACTIVE' && sub.expiresAt > new Date();
-  return { active: isActive, user, needsRedeem: false };
+  const activeSub = await findActiveSubscription(user.id);
+  if (activeSub) {
+    return { active: true, user, needsRedeem: false };
+  }
+
+  return { active: false, user, needsRedeem: false };
 }
 
 /**
- * Redeem kode: hubungkan chatId user dengan subscription, buat sheet terproteksi.
+ * Redeem kode: aktivasi subscription dan nonaktifkan subscription lain.
  * @param {number|string} chatId - Telegram chat ID
  * @param {string} code - 6 karakter redeem code
  */
@@ -64,23 +98,50 @@ async function redeemCode(chatId, code) {
     return { success: false, message: 'Kode redeem sudah digunakan oleh orang lain.' };
   }
 
-  // Cek apakah chatId ini sudah punya subscription aktif
+  // Cek apakah chatId ini sudah punya subscription aktif (belum expired)
   const existingUser = await prisma.user.findUnique({
     where: { chatId: String(chatId) },
-    include: { subscription: true },
   });
 
-  if (existingUser && existingUser.subscription) {
-    return { success: false, message: 'Anda sudah memiliki subscription aktif.' };
+  if (existingUser) {
+    const activeSub = await findActiveSubscription(existingUser.id);
+    if (activeSub) {
+      return { success: false, message: 'Anda sudah memiliki subscription aktif.' };
+    }
   }
 
   const now = new Date();
   const dashboardToken = generateDashboardToken();
-  const user = await prisma.user.update({
-    where: { id: sub.userId },
-    data: { chatId: String(chatId), dashboardToken },
+
+  // Connect chatId ke user (buat user baru jika perlu atau update existing)
+  let user;
+  if (existingUser) {
+    user = existingUser;
+    if (!user.dashboardToken) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { dashboardToken },
+      });
+    }
+  } else {
+    user = await prisma.user.update({
+      where: { id: sub.userId },
+      data: { chatId: String(chatId), dashboardToken },
+    });
+  }
+
+  // Nonaktifkan subscription lain milik user ini yang masih ACTIVE (misal trial)
+  // agar tidak bentrok dengan subscription baru
+  await prisma.subscription.updateMany({
+    where: {
+      userId: user.id,
+      id: { not: sub.id },
+      status: 'ACTIVE',
+    },
+    data: { status: 'CANCELLED' },
   });
 
+  // Aktivasi subscription yang di-redeem
   const updatedSub = await prisma.subscription.update({
     where: { id: sub.id },
     data: {
@@ -90,7 +151,7 @@ async function redeemCode(chatId, code) {
     },
   });
 
-  logger.info({ chatId, redeemCode: code }, 'Redeem berhasil');
+  logger.info({ chatId, redeemCode: code, plan: sub.plan }, 'Redeem berhasil');
 
   // Kirim email info aktivasi
   try {
@@ -154,11 +215,6 @@ async function subscribe({ email, name, plan = 'basic', durationDays = 30 }) {
   return { user, subscription };
 }
 
-/**
- * Generate dashboard token for user if not exists.
- * @param {object} user
- * @returns {Promise<string>} dashboard token
- */
 async function ensureDashboardToken(user) {
   if (user.dashboardToken) return user.dashboardToken;
   const token = generateDashboardToken();

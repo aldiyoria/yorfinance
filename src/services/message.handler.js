@@ -3,7 +3,7 @@ const { checkAccess, redeemCode, ensureDashboardToken } = require('./subscriptio
 const openaiService = require('./openai.service');
 const { appendTransaction, readTransactions, readTransactionsWithIndex, deleteTransaction, updateTransaction, clearAllTransactions } = require('./transaction.service');
 const { buildAggregate, buildStructuredSummary, filterTransactionsByDate, buildRecapList } = require('./summary.service');
-const { setBudget, checkBudget, deleteBudget } = require('./budget.service');
+const { setBudget, checkBudget, deleteBudget, parsePeriod } = require('./budget.service');
 const { prisma } = require('../db/prisma');
 const env = require('../config/env');
 
@@ -493,14 +493,28 @@ async function handleIncomingMessage({ chatId, text, media }) {
     const parts = rest.split(/\s+/);
     if (parts.length >= 2) {
       const category = parts[0];
-      const amountStr = parts.slice(1).join('');
-      const amount = parseNominal(amountStr);
+      const restStr = parts.slice(1).join(' ');
+
+      // Detect period alias (per hari, per bulan, /hari, dll)
+      let period = 'bulan';
+      let amountStr = restStr;
+      for (const alias of ['per hari', 'per bulan', 'per minggu', 'harian', 'bulanan', 'mingguan', '/hari', '/bulan', '/minggu']) {
+        const idx = restStr.toLowerCase().indexOf(alias);
+        if (idx !== -1) {
+          amountStr = restStr.substring(0, idx).trim();
+          const parsed = parsePeriod(alias);
+          if (parsed) period = parsed;
+          break;
+        }
+      }
+
+      const amount = parseNominal(amountStr.replace(/\s+/g, ''));
       if (amount > 0) {
-        const result = await setBudget(user.id, category, amount);
+        const result = await setBudget(user.id, category, amount, period);
         return result.message;
       }
     }
-    return 'Format: `set budget [kategori] [nominal]`\nContoh: `set budget makanan 800000`';
+    return 'Format: `set budget [kategori] [nominal]`\nContoh: `set budget makanan 800000`\nAtau: `set budget makanan 50000 per hari`';
   }
 
   // "link" → informasi transaksi tersimpan di DB
@@ -541,13 +555,27 @@ async function handleIncomingMessage({ chatId, text, media }) {
     const parts = rest.split(/\s+/);
     if (parts.length >= 2) {
       const category = parts[0];
-      const amount = parseNominal(parts.slice(1).join(''));
+      const restStr = parts.slice(1).join(' ');
+
+      let period = 'bulan';
+      let amountStr = restStr;
+      for (const alias of ['per hari', 'per bulan', 'per minggu', 'harian', 'bulanan', 'mingguan', '/hari', '/bulan', '/minggu']) {
+        const idx = restStr.toLowerCase().indexOf(alias);
+        if (idx !== -1) {
+          amountStr = restStr.substring(0, idx).trim();
+          const parsed = parsePeriod(alias);
+          if (parsed) period = parsed;
+          break;
+        }
+      }
+
+      const amount = parseNominal(amountStr.replace(/\s+/g, ''));
       if (amount > 0) {
-        const result = await setBudget(user.id, category, amount);
+        const result = await setBudget(user.id, category, amount, period);
         return result.message;
       }
     }
-    return 'Format: `set budget [kategori] [nominal]`\nContoh: `set budget makanan 800000`';
+    return 'Format: `set budget [kategori] [nominal]`\nContoh: `set budget makanan 800000`\nAtau: `set budget makanan 50000 per hari`';
   }
 
   if (intent === 'check_budget') {

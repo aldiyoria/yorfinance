@@ -2,6 +2,9 @@ const nodemailer = require('nodemailer');
 const env = require('../config/env');
 const logger = require('../utils/logger');
 
+function botUsername() { return env.telegram.botUsername; }
+function botLink() { return `https://t.me/${env.telegram.botUsername}`; }
+
 const transporter = nodemailer.createTransport({
   host: env.smtp.host,
   port: env.smtp.port,
@@ -45,7 +48,7 @@ async function sendRedeemEmail({ to, name, redeemCode, plan = 'basic' }) {
         <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0;">
           <p style="color: #374151; margin: 0 0 10px;"><strong>Cara Menggunakan:</strong></p>
           <ol style="color: #374151; margin: 0; padding-left: 20px;">
-            <li style="margin-bottom: 8px;">Buka Telegram, cari <strong>@YorFinanceBot</strong></li>
+            <li style="margin-bottom: 8px;">Buka Telegram, cari <strong>@${botUsername()}</strong></li>
             <li style="margin-bottom: 8px;">Kirim <code>/start</code></li>
             <li style="margin-bottom: 8px;">Masukkan kode aktivasi di atas</li>
           </ol>
@@ -78,7 +81,7 @@ Terima kasih telah berlangganan YorFinance!
 Kode aktivasi Anda: ${redeemCode}
 
 Cara Menggunakan:
-1. Buka Telegram, cari @YorFinanceBot
+1. Buka Telegram, cari @${botUsername()}
 2. Kirim /start
 3. Masukkan kode aktivasi di atas
 
@@ -107,6 +110,120 @@ Jika Anda tidak merasa berlangganan, abaikan email ini.
 }
 
 /**
+ * Kirim email redeem code untuk free trial.
+ * @param {object} opts
+ * @param {string} opts.to - email tujuan
+ * @param {string} [opts.name] - nama user
+ * @param {string} opts.redeemCode - kode redeem 6 karakter
+ * @param {Date} opts.expiresAt - waktu kedaluwarsa
+ * @param {number} [opts.trialDays] - durasi trial dalam hari (default 3)
+ */
+async function sendTrialEmail({ to, name, redeemCode, expiresAt, trialDays = 3 }) {
+  const subject = `YorFinance — Free Trial ${trialDays} Hari Anda`;
+
+  const formattedExpiry = expiresAt.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Jakarta',
+  });
+
+  const htmlBody = `
+    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+        <h1 style="color: white; margin: 0; font-size: 24px;">YorFinance</h1>
+        <p style="color: rgba(255,255,255,0.9); margin: 5px 0 0;">Free Trial ${trialDays} Hari</p>
+      </div>
+      
+      <div style="background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;">
+        <p style="color: #374151; font-size: 16px;">Halo <strong>${name || 'User'}</strong>,</p>
+        
+        <p style="color: #374151;">Selamat! Anda berhasil mengaktifkan <strong>Free Trial YorFinance</strong> selama ${trialDays} hari.</p>
+        
+        <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
+          <p style="color: #92400E; margin: 0; font-size: 14px;">
+            &#9200; Kode ini berlaku sampai<br>
+            <strong style="font-size: 15px;">${formattedExpiry}</strong>
+          </p>
+        </div>
+        
+        <p style="color: #374151;">Berikut adalah kode aktivasi Anda:</p>
+        
+        <div style="background: white; border: 2px dashed #10b981; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
+          <p style="color: #6b7280; margin: 0 0 5px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Kode Aktivasi</p>
+          <p style="color: #1f2937; font-size: 32px; font-weight: bold; margin: 0; letter-spacing: 5px; font-family: monospace;">${redeemCode}</p>
+        </div>
+        
+        <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <p style="color: #374151; margin: 0 0 10px;"><strong>Cara Menggunakan:</strong></p>
+          <ol style="color: #374151; margin: 0; padding-left: 20px;">
+            <li style="margin-bottom: 8px;">Buka Telegram, cari <strong>@${botUsername()}</strong></li>
+            <li style="margin-bottom: 8px;">Kirim <code>/start</code></li>
+            <li style="margin-bottom: 8px;">Masukkan kode aktivasi di atas</li>
+          </ol>
+          <p style="color: #374151; margin: 10px 0 0;">Setelah aktivasi, Anda bisa langsung mulai mencatat keuangan!</p>
+        </div>
+        
+        <div style="background: #ECFDF5; border-radius: 8px; padding: 15px; margin: 20px 0;">
+          <p style="color: #065f46; margin: 0; font-size: 14px;">
+            <strong>Paket:</strong> Free Trial (${trialDays} Hari)<br>
+            <strong>Berlaku sampai:</strong> ${formattedExpiry}
+          </p>
+        </div>
+        
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+        
+        <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+          Email ini dikirim otomatis oleh YorFinance.<br>
+          Jika Anda tidak merasa mendaftar free trial, abaikan email ini.
+        </p>
+      </div>
+    </div>
+  `;
+
+  const textBody = `
+YorFinance — Free Trial ${trialDays} Hari
+
+Halo ${name || 'User'},
+
+Selamat! Anda berhasil mengaktifkan Free Trial YorFinance selama ${trialDays} hari.
+
+PERHATIAN: Kode ini berlaku sampai ${formattedExpiry}
+
+Kode aktivasi Anda: ${redeemCode}
+
+Cara Menggunakan:
+1. Buka Telegram, cari @${botUsername()}
+2. Kirim /start
+3. Masukkan kode aktivasi di atas
+
+Paket: Free Trial (${trialDays} Hari)
+
+---
+Email ini dikirim otomatis oleh YorFinance.
+Jika Anda tidak merasa mendaftar free trial, abaikan email ini.
+  `.trim();
+
+  try {
+    const info = await transporter.sendMail({
+      from: env.smtp.from,
+      to,
+      subject,
+      text: textBody,
+      html: htmlBody,
+    });
+
+    logger.info({ to, messageId: info.messageId }, 'Trial email terkirim');
+    return { success: true, messageId: info.messageId };
+  } catch (err) {
+    logger.error({ err, to }, 'Gagal mengirim trial email');
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Verifikasi koneksi SMTP.
  */
 async function verifyConnection() {
@@ -120,4 +237,4 @@ async function verifyConnection() {
   }
 }
 
-module.exports = { sendRedeemEmail, verifyConnection };
+module.exports = { sendRedeemEmail, sendTrialEmail, verifyConnection };

@@ -119,7 +119,6 @@ async function seedDefaults() {
         'Catat transaksi via chat',
         'Foto struk (AI ekstrak)',
         'Transaksi unlimited',
-        '1 Google Sheet pribadi',
         'Ringkasan bulanan',
         'Kategori otomatis',
       ],

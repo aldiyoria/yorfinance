@@ -104,15 +104,22 @@ async function getPaymentStatus(req, res) {
 
     const payment = await prisma.payment.findUnique({
       where: { externalId },
-      include: {
-        user: {
-          include: { subscription: true },
-        },
-      },
+      include: { user: true },
     });
 
     if (!payment) {
       return res.status(404).json({ error: 'Payment tidak ditemukan.' });
+    }
+
+    // Cari subscription terbaru milik user
+    let sub = null;
+    if (payment.user) {
+      const subs = await prisma.subscription.findMany({
+        where: { userId: payment.user.id },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      });
+      sub = subs[0] || null;
     }
 
     return res.json({
@@ -131,10 +138,10 @@ async function getPaymentStatus(req, res) {
         email: payment.user.email,
         name: payment.user.name,
       },
-      subscription: payment.user.subscription ? {
-        status: payment.user.subscription.status,
-        redeemCode: payment.user.subscription.status === 'PENDING' ? payment.user.subscription.redeemCode : undefined,
-        expiresAt: payment.user.subscription.expiresAt,
+      subscription: sub ? {
+        status: sub.status,
+        redeemCode: sub.status === 'PENDING' ? sub.redeemCode : undefined,
+        expiresAt: sub.expiresAt,
       } : null,
     });
   } catch (err) {

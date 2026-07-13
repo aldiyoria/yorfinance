@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>YorFinance — Catat Keuangan via Telegram</title>
-  <meta name="description" content="Bot Telegram pintar untuk mencatat pemasukan & pengeluaran otomatis. Kirim teks atau foto struk, data langsung tercatat di Google Sheets.">
+  <meta name="description" content="Bot Telegram pintar untuk mencatat pemasukan & pengeluaran otomatis. Kirim teks atau foto struk, data langsung tercatat aman dan terenkripsi.">
   <link rel="icon" type="image/png" href="/public/asset/img/logo.png">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,6 +24,7 @@
         <li><a href="#how">Cara Kerja</a></li>
         <li><a href="#pricing">Harga</a></li>
         <li><a href="#faq">FAQ</a></li>
+        <li><a href="trial.html">Free Trial</a></li>
         <li><a href="history.html">Status Bayar</a></li>
       </ul>
       <a href="checkout.html" class="btn btn-primary btn-sm">Mulai Sekarang</a>
@@ -43,6 +44,7 @@
         </p>
         <div class="hero-actions">
           <a href="checkout.html" class="btn btn-primary btn-lg">Mulai Kelola Uang</a>
+          <a href="trial.html" class="btn btn-trial-outline btn-lg" id="hero-trial-btn">Coba Gratis 3 Hari</a>
           <a href="#masalah" class="btn btn-ghost btn-lg">Kenali Masalahnya</a>
         </div>
       </div>
@@ -268,12 +270,12 @@
         <div class="feature-card">
           <div class="feature-icon">&#128200;</div>
           <h3>Ringkasan Real-time</h3>
-          <p>Tanya "berapa pengeluaran bulan ini?" — bot langsung jawab dari data Google Sheets Anda.</p>
+          <p>Tanya "berapa pengeluaran bulan ini?" — bot langsung jawab dari data Anda.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#128274;</div>
           <h3>Aman & Privat</h3>
-          <p>Data tersimpan di Google Sheets milik Anda sendiri. Tidak ada server pihak ketiga.</p>
+          <p>Semua data transaksi Anda terenkripsi. Hanya Anda yang bisa melihat log transaksi Anda.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#9889;</div>
@@ -302,21 +304,21 @@
           <div class="step-num">1</div>
           <div class="step-content">
             <h3>Buka Telegram</h3>
-            <p>Cari <strong>@YorFinanceBot</strong> di Telegram, kirim <code>/start</code>, lalu masukkan redeem code yang Anda terima via email.</p>
+            <p>Cari <strong id="how-bot-name">@YorFinanceBot</strong> di Telegram, kirim <code>/start</code>, lalu masukkan redeem code yang Anda terima via email.</p>
           </div>
         </div>
         <div class="step">
           <div class="step-num">2</div>
           <div class="step-content">
             <h3>Kirim Pesan</h3>
-            <p>Ketik transaksi seperti <code>beli kopi 25rb</code> atau kirim foto struk. Bot akan mencatat otomatis ke Google Sheets Anda.</p>
+            <p>Ketik transaksi seperti <code>beli kopi 25rb</code> atau kirim foto struk. Bot akan mencatat otomatis.</p>
           </div>
         </div>
         <div class="step">
           <div class="step-num">3</div>
           <div class="step-content">
             <h3>Pantau & Analisis</h3>
-            <p>Kirim <code>link</code> untuk lihat spreadsheet, atau tanya ringkasan seperti "total pengeluaran bulan ini berapa?"</p>
+            <p>Kirim <code>link</code> untuk lihat dashboard, atau tanya ringkasan seperti "total pengeluaran bulan ini berapa?"</p>
           </div>
         </div>
       </div>
@@ -340,7 +342,6 @@
             <li>&#10003; Catat transaksi via chat</li>
             <li>&#10003; Foto struk (AI ekstrak)</li>
             <li>&#10003; Transaksi unlimited</li>
-            <li>&#10003; 1 Google Sheet pribadi</li>
             <li>&#10003; Ringkasan bulanan</li>
             <li>&#10003; Kategori otomatis</li>
           </ul>
@@ -376,6 +377,28 @@
   })();
   </script>
 
+  <!-- Security -->
+  <section class="security" id="security">
+    <div class="container">
+      <div class="security-box">
+        <div class="security-icon">&#128274;</div>
+        <h2>Data Anda Terjamin Aman</h2>
+        <p>Kami memahami privasi adalah hal yang sangat penting. Oleh karena itu, semua data transaksi Anda dienkripsi dan hanya Anda yang bisa melihat log transaksi tersebut.</p>
+        <div class="security-features">
+          <div class="security-feature">
+            <span>&#10003;</span> Enkripsi AES-256
+          </div>
+          <div class="security-feature">
+            <span>&#10003;</span> Hanya Anda yang bisa membaca data
+          </div>
+          <div class="security-feature">
+            <span>&#10003;</span> Kami tidak dapat melihat isi transaksi
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- FAQ -->
   <section class="faq" id="faq">
     <div class="container">
@@ -386,15 +409,15 @@
       <div class="faq-list">
         <details class="faq-item">
           <summary>Apa itu YorFinance?</summary>
-          <p>YorFinance adalah bot Telegram yang membantu Anda mencatat pemasukan dan pengeluaran pribadi secara otomatis. Cukup kirim pesan atau foto struk, data akan langsung tercatat di Google Sheets milik Anda.</p>
+          <p>YorFinance adalah bot Telegram yang membantu Anda mencatat pemasukan dan pengeluaran pribadi secara otomatis. Cukup kirim pesan atau foto struk, data akan langsung tercatat aman dan terenkripsi.</p>
         </details>
         <details class="faq-item">
           <summary>Apakah data saya aman?</summary>
-          <p>Ya. Tidak ada data yang disimpan di server pihak ketiga. Anda memiliki kontrol penuh atas data Anda.</p>
+          <p>Ya. Semua data transaksi Anda terenkripsi di sistem kami. Hanya Anda yang bisa melihat log transaksi. Kami tidak dapat membaca data Anda.</p>
         </details>
         <details class="faq-item">
           <summary>Apakah perlu install aplikasi?</summary>
-          <p>Tidak. YorFinance berjalan di Telegram yang sudah terinstall di HP Anda. Cukup cari bot @YorFinanceBot dan mulai mencatat.</p>
+          <p>Tidak. YorFinance berjalan di Telegram yang sudah terinstall di HP Anda. Cukup cari bot <span id="faq-bot-name">@YorFinanceBot</span> dan mulai mencatat.</p>
         </details>
         <details class="faq-item">
           <summary>Bagaimana cara kerja foto struk?</summary>
@@ -419,7 +442,7 @@
             &#128172; Mulai Sekarang
           </a>
         </div>
-        <p class="cta-note">Tanpa aplikasi ribet. Tanpa data hilang. Semua ada di Google Sheets milikmu.</p>
+        <p class="cta-note">Tanpa aplikasi ribet. Tanpa data hilang. Semua data terenkripsi dan aman.</p>
       </div>
     </div>
   </section>
@@ -462,16 +485,15 @@
           <ul>
             <li><a href="history.html">Status Pembayaran</a></li>
             <li><a href="#faq">FAQ</a></li>
-            <li><a href="https://t.me/YorFinanceBot" target="_blank">Telegram Bot</a></li>
-            <li>
-      Jika memiliki pertanyaan, kendala, atau ingin menyampaikan pengaduan,
-      silakan hubungi kami melalui email:
-      <br>
-      <a href="mailto:yoriaditya17@gmail.com">
-        yoriaditya17@gmail.com
-      </a>
-    </li>
+            <li><a id="footer-bot-link" href="https://t.me/YorFinanceBot" target="_blank">Telegram Bot</a></li>
           </ul>
+           <p style="margin-top:16px; font-size:14px; line-height:1.6;">
+    Jika Anda memiliki pertanyaan, kendala, atau ingin menyampaikan pengaduan,
+    silakan hubungi kami melalui email:
+    <br>
+    <a href="mailto:yoriaditya17@gmail.com">
+      yoriaditya17@gmail.com
+    </a>
         </div>
       </div>
       <div class="footer-bottom">
@@ -481,5 +503,26 @@
   </footer>
 
   <script src="script.js"></script>
+  <script>
+  // Load bot config from API and update all references
+  (async function() {
+    try {
+      const res = await fetch('/api/config');
+      if (!res.ok) return;
+      const cfg = await res.json();
+      const name = '@' + cfg.botUsername;
+      const link = cfg.botLink;
+      const els = document.querySelectorAll('#how-bot-name, #faq-bot-name');
+      els.forEach(el => el.textContent = name);
+      const footerLink = document.getElementById('footer-bot-link');
+      if (footerLink) { footerLink.href = link; }
+      if (cfg.trial && cfg.trial.trialDays) {
+        const d = cfg.trial.trialDays;
+        const heroBtn = document.getElementById('hero-trial-btn');
+        if (heroBtn) heroBtn.textContent = 'Coba Gratis ' + d + ' Hari';
+      }
+    } catch (_) {}
+  })();
+  </script>
 </body>
 </html>

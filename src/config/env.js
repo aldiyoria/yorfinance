@@ -21,6 +21,7 @@ const env = {
 
   telegram: {
     botToken: required('TELEGRAM_BOT_TOKEN'),
+    botUsername: process.env.TELEGRAM_BOT_USERNAME || 'YorFinanceBot',
   },
 
   openai: {
@@ -45,6 +46,8 @@ const env = {
   },
 
   dashboardBaseUrl: process.env.DASHBOARD_BASE_URL || 'http://localhost:3000',
+
+  encryptionKey: process.env.ENCRYPTION_KEY || '',
 
   tz: process.env.TZ || 'Asia/Jakarta',
 };

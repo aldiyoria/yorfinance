@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YorFinance — Free Trial</title>
+  <link rel="icon" type="image/png" href="/public/asset/img/logo.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="trial.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="trial-page">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="logo">
+        <span class="logo-icon">&#9670;</span> YorFinance
+      </a>
+      <a href="index.html" class="btn btn-ghost btn-sm">Kembali</a>
+    </div>
+  </nav>
+
+  <!-- Trial Form -->
+  <section class="trial-section">
+    <div class="trial-container">
+
+      <!-- Left: Form -->
+      <div class="trial-form-wrapper">
+        <div class="trial-badge">&#127873; Gratis</div>
+        <h1 id="trial-title">Free Trial</h1>
+        <p class="trial-subtitle" id="trial-subtitle">Coba YorFinance tanpa kartu kredit. Isi email, dapatkan kode aktivasi, langsung mulai catat keuangan.</p>
+
+        <div class="trial-highlights">
+          <div class="trial-highlight-item">
+            <span class="trial-check">&#10003;</span>
+            <span>Tanpa kartu kredit</span>
+          </div>
+          <div class="trial-highlight-item">
+            <span class="trial-check">&#10003;</span>
+            <span>Semua fitur Basic</span>
+          </div>
+          <div class="trial-highlight-item">
+            <span class="trial-check">&#10003;</span>
+            <span id="trial-duration-badge">Berlaku — hari</span>
+          </div>
+        </div>
+
+        <form id="trialForm" class="trial-form">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="nama@email.com" required>
+            <small class="form-hint">Kode redeem akan dikirim ke email ini.</small>
+          </div>
+
+          <div class="form-group">
+            <label for="name">Nama Lengkap <span class="optional">(opsional)</span></label>
+            <input type="text" id="name" name="name" placeholder="Nama Anda">
+          </div>
+
+          <button type="submit" class="btn btn-trial btn-lg btn-block" id="submitBtn">
+            <span class="btn-text">Aktifkan Free Trial</span>
+            <span class="btn-loading" style="display:none;">Memproses...</span>
+          </button>
+
+          <p class="trial-note">
+            Dengan mengklik tombol di atas, Anda menyetujui syarat & ketentuan YorFinance.
+          </p>
+        </form>
+      </div>
+
+      <!-- Right: Info -->
+      <div class="trial-info">
+        <h3>Yang Anda Dapatkan</h3>
+
+        <div class="trial-info-card">
+          <div class="trial-info-icon">&#128172;</div>
+          <div>
+            <strong>Catat via Chat</strong>
+            <p>Kirim pesan seperti "beli kopi 25rb" — bot langsung catat.</p>
+          </div>
+        </div>
+
+        <div class="trial-info-card">
+          <div class="trial-info-icon">&#128247;</div>
+          <div>
+            <strong>Foto Struk</strong>
+            <p>Kirim foto struk, AI ekstrak otomatis.</p>
+          </div>
+        </div>
+
+        <div class="trial-info-card">
+          <div class="trial-info-icon">&#128200;</div>
+          <div>
+            <strong>Ringkasan Real-time</strong>
+            <p>Tanya "berapa pengeluaran bulan ini?" — langsung jawab.</p>
+          </div>
+        </div>
+
+        <div class="trial-info-card">
+          <div class="trial-info-icon">&#127760;</div>
+          <div>
+            <strong>Kategori Otomatis</strong>
+            <p>AI menentukan kategori transaksi secara otomatis.</p>
+          </div>
+        </div>
+
+        <div class="trial-expiry-note">
+          <span class="trial-clock">&#9200;</span>
+          <div>
+            <strong id="trial-duration-info">Berlaku — Hari</strong>
+            <p id="trial-duration-note">Setelah masa trial habis, Anda bisa berlangganan paket Basic untuk melanjutkan.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <script src="trial.js"></script>
+</body>
+</html>

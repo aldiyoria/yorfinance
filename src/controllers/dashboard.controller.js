@@ -1,5 +1,6 @@
 const { prisma } = require('../db/prisma');
 const { readTransactions } = require('../services/transaction.service');
+const { safeDecrypt } = require('../utils/encrypt');
 const logger = require('../utils/logger');
 
 function formatRupiah(n) {
@@ -83,9 +84,9 @@ async function getDashboardData(req, res) {
     const budgets = user.budgets
       .filter((b) => b.month === currentMonth)
       .map((b) => ({
-        category: b.category,
+        category: safeDecrypt(b.category),
         budget: b.amount,
-        spent: byCategory[b.category] || 0,
+        spent: byCategory[safeDecrypt(b.category)] || 0,
       }));
 
     res.json({

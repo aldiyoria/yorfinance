@@ -50,7 +50,6 @@ model Budget {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, category, month])
   @@index([userId, month])
 }
 
@@ -64,6 +63,8 @@ model Package {
   features     String[]
   isActive     Boolean  @default(true)
   isPopular    Boolean  @default(false)
+  isFreeTrial  Boolean  @default(false)
+  trialDays    Int      @default(0)
   sortOrder    Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

@@ -1,0 +1,352 @@
+/* ===== TRIAL PAGE ===== */
+.trial-page {
+  background: var(--bg-alt);
+}
+
+.trial-section {
+  padding: 100px 0 60px;
+  min-height: calc(100vh - 64px);
+}
+
+.trial-container {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 32px;
+  align-items: start;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* ===== FORM ===== */
+.trial-form-wrapper {
+  background: white;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 40px;
+}
+
+.trial-badge {
+  display: inline-block;
+  background: #ECFDF5;
+  color: #059669;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+
+.trial-form-wrapper h1 {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.trial-subtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.trial-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.trial-highlight-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.trial-check {
+  color: #10b981;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.trial-form .form-group {
+  margin-bottom: 20px;
+}
+
+.trial-form .form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.trial-form .optional {
+  font-weight: 400;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.trial-form .form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: white;
+}
+
+.trial-form .form-group input:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.trial-form .form-group input::placeholder {
+  color: #9CA3AF;
+}
+
+.trial-form .form-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* ===== SUBMIT BUTTON ===== */
+.btn-trial {
+  background: #10b981;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-trial:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-trial:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.trial-form #submitBtn {
+  margin-top: 8px;
+  position: relative;
+}
+
+.trial-note {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 16px;
+}
+
+/* ===== INFO PANEL ===== */
+.trial-info {
+  background: white;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 32px;
+  position: sticky;
+  top: 96px;
+}
+
+.trial-info h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.trial-info-card {
+  display: flex;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.trial-info-card:last-of-type {
+  border-bottom: none;
+}
+
+.trial-info-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  background: var(--bg-alt);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trial-info-card strong {
+  font-size: 14px;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.trial-info-card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.trial-expiry-note {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  background: #FEF3C7;
+  border-radius: var(--radius-sm);
+  margin-top: 20px;
+}
+
+.trial-clock {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.trial-expiry-note strong {
+  font-size: 14px;
+  display: block;
+  margin-bottom: 2px;
+  color: #92400E;
+}
+
+.trial-expiry-note p {
+  font-size: 13px;
+  color: #A16207;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ===== SUCCESS STATE ===== */
+.trial-success {
+  text-align: center;
+  padding: 60px 40px;
+}
+
+.trial-success .success-icon {
+  width: 80px;
+  height: 80px;
+  background: #ECFDF5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  font-size: 40px;
+  color: #10b981;
+}
+
+.trial-success h2 {
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.trial-success p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.trial-success .trial-steps {
+  text-align: left;
+  max-width: 360px;
+  margin: 0 auto 24px;
+  background: var(--bg-alt);
+  border-radius: var(--radius-sm);
+  padding: 20px 24px;
+}
+
+.trial-success .trial-steps h4 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.trial-success .trial-steps ol {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.trial-success .trial-steps li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.trial-success .trial-steps code {
+  background: #E5E7EB;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.trial-expiry-alert {
+  background: #FEF3C7;
+  border: 1px solid #F59E0B;
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  max-width: 360px;
+  margin: 0 auto 24px;
+  font-size: 13px;
+  color: #92400E;
+  line-height: 1.5;
+}
+
+/* ===== ERROR STATE ===== */
+.form-error {
+  background: #FEF2F2;
+  color: #DC2626;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  margin-bottom: 20px;
+  display: none;
+}
+
+.form-error.active {
+  display: block;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .trial-container {
+    grid-template-columns: 1fr;
+  }
+
+  .trial-form-wrapper {
+    padding: 28px 20px;
+  }
+
+  .trial-info {
+    position: static;
+  }
+
+  .trial-section {
+    padding: 80px 0 40px;
+  }
+
+  .trial-highlights {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
