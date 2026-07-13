@@ -63,15 +63,21 @@ async function loadPackages() {
 
 function renderPackageOptions() {
   const container = document.getElementById('plan-options');
-  container.innerHTML = packages.map((pkg, i) => `
-    <div class="plan-card ${i === 0 ? 'plan-active' : ''}" data-idx="${i}" onclick="selectPlan(${i})">
-      <div class="plan-info">
-        <div class="plan-name">${pkg.name}</div>
-        <div class="plan-desc">${pkg.description || ''}</div>
+  container.innerHTML = packages.map((pkg, i) => {
+    const isFreeTrial = pkg.isFreeTrial;
+    const priceLabel = isFreeTrial ? 'Gratis' : `Rp${pkg.price.toLocaleString('id-ID')}<span>/bln</span>`;
+    const clickHandler = isFreeTrial ? `window.location.href='trial.html'` : `selectPlan(${i})`;
+    const activeClass = !isFreeTrial && i === 0 ? 'plan-active' : '';
+    return `
+      <div class="plan-card ${activeClass}" data-idx="${i}" onclick="${clickHandler}" style="${isFreeTrial ? 'cursor:pointer' : ''}">
+        <div class="plan-info">
+          <div class="plan-name">${pkg.name}</div>
+          <div class="plan-desc">${pkg.description || ''}</div>
+        </div>
+        <div class="plan-price">${priceLabel}</div>
       </div>
-      <div class="plan-price">Rp${pkg.price.toLocaleString('id-ID')}<span>/bln</span></div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function selectPlan(idx) {

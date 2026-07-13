@@ -633,13 +633,15 @@ ul { list-style: none; }
 }
 
 .pricing-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 24px;
   align-items: start;
 }
 
 .pricing-card {
+  flex: 0 1 320px;
   padding: 36px 28px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
@@ -883,7 +885,7 @@ ul { list-style: none; }
 
   .steps { flex-direction: column; }
 
-  .pricing-grid { grid-template-columns: repeat(2, 1fr); max-width: 600px; margin: 0 auto; }
+  .pricing-grid { max-width: 700px; margin: 0 auto; }
   .pricing-popular { transform: none; }
 
   .footer-grid { grid-template-columns: 1fr; gap: 32px; }

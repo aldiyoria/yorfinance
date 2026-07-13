@@ -15,7 +15,7 @@ async function listPackages() {
  */
 async function listActivePackages() {
   return prisma.package.findMany({
-    where: { isActive: true },
+    where: { isActive: true, isFreeTrial: false },
     orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     select: {
       id: true,
@@ -26,6 +26,7 @@ async function listActivePackages() {
       durationDays: true,
       features: true,
       isPopular: true,
+      isFreeTrial: true,
     },
   });
 }
