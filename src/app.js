@@ -48,13 +48,13 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Serve static frontend files from web/
-app.use('/web', express.static(path.join(__dirname, '../web')));
+app.use('/web', express.static(path.join(__dirname, '../web'), { extensions: ['html'] }));
 
 // Serve public assets (logo, etc.)
 app.use('/public', express.static(path.join(__dirname, '../public')));
 
 // Root redirect to landing page
-app.get('/', (_req, res) => res.redirect('/web/index.html'));
+app.get('/', (_req, res) => res.redirect('/web/'));
 
 // 404 handler
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
