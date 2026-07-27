@@ -117,6 +117,13 @@ async function redeemCode(chatId, code) {
   let user;
   if (existingUser) {
     user = existingUser;
+    // Reassign subscription ke user yang punya chatId jika beda user
+    if (existingUser.id !== sub.userId) {
+      await prisma.subscription.update({
+        where: { id: sub.id },
+        data: { userId: existingUser.id },
+      });
+    }
     if (!user.dashboardToken) {
       user = await prisma.user.update({
         where: { id: user.id },
