@@ -285,11 +285,6 @@ async function handleWebhook(body, receivedSignature) {
       data: { status: 'EXPIRED' },
     });
   }
-    await prisma.payment.update({
-      where: { id: payment.id },
-      data: { status: 'EXPIRED' },
-    });
-  }
   // statusCode === 0 => still pending, no action needed
 
   return { success: true };
