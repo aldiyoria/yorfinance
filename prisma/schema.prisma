@@ -31,7 +31,7 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  subscription  Subscription?
+  subscriptions Subscription[]
   payments      Payment[]
   budgets       Budget[]
   transactions  Transaction[]
@@ -46,7 +46,7 @@ model Budget {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   category  String
   amount    Int
-  month     String   // format "YYYY-MM"
+  month     String // format "YYYY-MM"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -76,39 +76,40 @@ model Package {
 }
 
 model Subscription {
-  id           String             @id @default(cuid())
-  userId       String             @unique
-  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  packageId    String?
-  package      Package?           @relation(fields: [packageId], references: [id])
-  status       SubscriptionStatus @default(PENDING)
-  plan         String             @default("basic")
-  redeemCode   String             @unique
-  activatedAt  DateTime?
-  startedAt    DateTime?
-  expiresAt    DateTime
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  packageId   String?
+  package     Package?           @relation(fields: [packageId], references: [id])
+  status      SubscriptionStatus @default(PENDING)
+  plan        String             @default("basic")
+  redeemCode  String             @unique
+  activatedAt DateTime?
+  startedAt   DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 
   @@index([redeemCode])
+  @@index([userId])
   @@index([packageId])
 }
 
 model Payment {
-  id              String        @id @default(cuid())
-  userId          String
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  externalId      String        @unique
-  invoiceId       String?
-  amount          Int
-  currency        String        @default("IDR")
-  status          PaymentStatus @default(PENDING)
-  paymentMethod   String?
-  paymentChannel  String?
-  description     String?
-  paidAt          DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  externalId     String        @unique
+  invoiceId      String?
+  amount         Int
+  currency       String        @default("IDR")
+  status         PaymentStatus @default(PENDING)
+  paymentMethod  String?
+  paymentChannel String?
+  description    String?
+  paidAt         DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@index([externalId])
   @@index([userId])
@@ -118,8 +119,8 @@ model Transaction {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date      String   // format "YYYY-MM-DD"
-  type      String   // "income" | "expense"
+  date      String // format "YYYY-MM-DD"
+  type      String // "income" | "expense"
   category  String
   item      String
   amount    Int

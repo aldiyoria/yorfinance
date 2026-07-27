@@ -338,12 +338,11 @@ async function handleIncomingMessage({ chatId, text, media }) {
 
   // /status
   if (trimmed.startsWith('/status')) {
-    const { active, user, needsRedeem } = await checkAccess(chatId);
+    const { active, user, needsRedeem, subscription: sub } = await checkAccess(chatId);
     if (!user) return NOT_SUBSCRIBED_MSG;
     if (needsRedeem) return 'Status: *Menunggu Redeem*\n\nMasukkan redeem code Anda untuk mengaktifkan.';
     if (!active) return EXPIRED_MSG;
 
-    const sub = user.subscription;
     const expiresAt = new Date(sub.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     return (
       '📋 *Status Langganan*\n\n' +

@@ -137,7 +137,7 @@ async function resetUser(req, res) {
 
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { subscription: true, payments: true },
+      include: { subscriptions: true, payments: true },
     });
 
     if (!user) {
@@ -145,8 +145,8 @@ async function resetUser(req, res) {
     }
 
     await prisma.payment.deleteMany({ where: { userId: user.id } });
-    if (user.subscription) {
-      await prisma.subscription.delete({ where: { userId: user.id } });
+    if (user.subscriptions.length > 0) {
+      await prisma.subscription.deleteMany({ where: { userId: user.id } });
     }
     await prisma.user.delete({ where: { id: user.id } });
 

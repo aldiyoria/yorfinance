@@ -212,7 +212,7 @@ async function handleWebhook(body, receivedSignature) {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { subscription: true },
+      include: { subscriptions: true },
     });
 
     if (!user) {
@@ -242,11 +242,14 @@ async function handleWebhook(body, receivedSignature) {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
-    const existingSub = await prisma.subscription.findUnique({ where: { userId: user.id } });
+    const existingSub = await prisma.subscription.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+    });
 
     if (existingSub) {
       await prisma.subscription.update({
-        where: { userId: user.id },
+        where: { id: existingSub.id },
         data: {
           plan: planSlug,
           redeemCode,

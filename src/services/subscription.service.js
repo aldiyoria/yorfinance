@@ -57,19 +57,19 @@ async function checkAccess(chatId) {
     where: { chatId: String(chatId) },
   });
 
-  if (!user) return { active: false, user: null, needsRedeem: false };
+  if (!user) return { active: false, user: null, needsRedeem: false, subscription: null };
 
   const pendingSub = await findPendingSubscription(user.id);
   if (pendingSub) {
-    return { active: false, user, needsRedeem: true };
+    return { active: false, user, needsRedeem: true, subscription: null };
   }
 
   const activeSub = await findActiveSubscription(user.id);
   if (activeSub) {
-    return { active: true, user, needsRedeem: false };
+    return { active: true, user, needsRedeem: false, subscription: activeSub };
   }
 
-  return { active: false, user, needsRedeem: false };
+  return { active: false, user, needsRedeem: false, subscription: null };
 }
 
 /**

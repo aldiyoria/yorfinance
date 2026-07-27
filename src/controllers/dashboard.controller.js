@@ -17,7 +17,7 @@ async function getDashboardData(req, res) {
 
     const user = await prisma.user.findUnique({
       where: { dashboardToken: token },
-      include: { subscription: true, budgets: true },
+      include: { subscriptions: true, budgets: true },
     });
 
     if (!user) {

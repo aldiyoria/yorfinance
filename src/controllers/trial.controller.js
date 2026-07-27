@@ -38,10 +38,10 @@ async function createTrial(req, res) {
     // Cek apakah email sudah pernah punya subscription (trial atau basic)
     const existingUser = await prisma.user.findFirst({
       where: { email: normalizedEmail },
-      include: { subscription: true },
+      include: { subscriptions: true },
     });
 
-    if (existingUser && existingUser.subscription) {
+    if (existingUser && existingUser.subscriptions.length > 0) {
       return res.status(409).json({
         error: 'Email ini sudah pernah menggunakan free trial atau berlangganan. Silakan gunakan email lain atau hubungi admin.',
       });
