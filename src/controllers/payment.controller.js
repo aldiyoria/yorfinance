@@ -79,8 +79,12 @@ async function createInvoice(req, res) {
 async function paymentCallback(req, res) {
   try {
     const receivedSignature = req.headers['x-signature'];
+    const contentType = req.headers['content-type'];
+
+    logger.info({ contentType, hasBody: !!req.body, bodyType: typeof req.body }, 'iPaymu callback diterima');
 
     if (!receivedSignature) {
+      logger.warn({ headers: req.headers }, 'iPaymu callback: Missing X-Signature header');
       return res.status(400).json({ error: 'Missing X-Signature header' });
     }
 
@@ -90,9 +94,17 @@ async function paymentCallback(req, res) {
       try { body = JSON.parse(body); } catch (_) {}
     }
 
+    if (!body || typeof body !== 'object' || Object.keys(body).length === 0) {
+      logger.error({ rawBody: req.body, bodyType: typeof req.body }, 'iPaymu callback: body kosong atau tidak ter-parse');
+      return res.status(400).json({ error: 'Empty or unparseable body' });
+    }
+
+    logger.info({ keys: Object.keys(body), referenceId: body.reference_id || body.referenceId, status: body.status_code }, 'iPaymu callback body content');
+
     const result = await handleWebhook(body, receivedSignature);
 
     if (!result.success) {
+      logger.warn({ error: result.error, referenceId: body.reference_id }, 'iPaymu callback ditolak');
       return res.status(400).json({ error: result.error });
     }
 

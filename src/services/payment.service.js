@@ -69,7 +69,19 @@ function verifyCallbackSignature(body, receivedSignature) {
       .update(jsonBody)
       .digest('hex');
 
-    return calculatedSignature === receivedSignature;
+    const match = calculatedSignature === receivedSignature;
+
+    if (!match) {
+      logger.error({
+        receivedSignature,
+        calculatedSignature,
+        vaUsed: env.ipaymu.va ? env.ipaymu.va.substring(0, 4) + '****' : 'EMPTY',
+        jsonBody,
+        originalBodyKeys: Object.keys(body),
+      }, 'iPaymu callback signature MISMATCH');
+    }
+
+    return match;
   } catch (err) {
     logger.error({ err }, 'Error verifying iPaymu callback signature');
     return false;

@@ -355,7 +355,7 @@
   // Load active packages from DB
   (async function() {
     try {
-      const res = await fetch('/api/packages');
+      const res = await fetch('/api/packages?_=' + Date.now());
       if (!res.ok) return;
       const { packages } = await res.json();
       if (!packages || packages.length === 0) return;
@@ -451,7 +451,7 @@
   // Update CTA price from DB
   (async function() {
     try {
-      const res = await fetch('/api/packages');
+      const res = await fetch('/api/packages?_=' + Date.now());
       if (!res.ok) return;
       const { packages } = await res.json();
       if (packages && packages.length > 0) {

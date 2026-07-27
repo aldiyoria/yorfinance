@@ -12,7 +12,7 @@ let selectedPackage = null;
 // Load packages from DB
 async function loadPackages() {
   try {
-    const res = await fetch(`${API_BASE}/api/packages`);
+    const res = await fetch(`${API_BASE}/api/packages?_=` + Date.now());
     if (!res.ok) throw new Error('Gagal load paket');
     const data = await res.json();
     packages = data.packages || [];

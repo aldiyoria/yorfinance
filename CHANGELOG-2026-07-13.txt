@@ -1,0 +1,82 @@
+# CHANGELOG — 13 Juli 2026
+
+## 1. Bot Username Dinamis (TELEGRAM_BOT_USERNAME)
+- **File:** `src/config/env.js`
+  - Menambahkan `telegram.botUsername` yang membaca dari env `TELEGRAM_BOT_USERNAME` (default `YorFinanceBot`)
+- **File baru:** `src/controllers/config.controller.js`, `src/routes/config.routes.js`
+  - Endpoint `GET /api/config` — mengembalikan `botUsername`, `botLink`, `appName`, `trial` (info trial package)
+  - Dipasang di `src/app.js` sebagai `/api/config`
+- **File:** `src/services/email.service.js`
+  - Semua hardcoded `@YorFinanceBot` diganti dengan `@${botUsername()}`
+  - Fungsi helper `botUsername()` dan `botLink()`
+- **File:** `web/index.html`
+  - Placeholder `#how-bot-name`, `#faq-bot-name`, `#footer-bot-link` diisi via fetch `/api/config`
+  - Hero button "Coba Gratis X Hari" diupdate dari API
+- **File:** `web/trial.js`
+  - `showSuccess()` fetch `/api/config` untuk bot name dinamis
+- **File:** `web/success.html`
+  - `#success-bot-name` diisi via fetch `/api/config`
+- **File:** `.env`, `.env.example`
+  - Menambahkan `TELEGRAM_BOT_USERNAME`
+
+## 2. Free Trial dari Database (Package Model)
+- **Migration baru:** `prisma/migrations/20260713100000_add_free_trial_fields`
+  - Menambahkan kolom `isFreeTrial` (Boolean) dan `trialDays` (Int) ke tabel `Package`
+  - Seed paket Free Trial (`slug: free-trial`, `price: 0`, `trialDays: 3`)
+- **File:** `src/controllers/trial.controller.js`
+  - Membaca durasi trial dari DB via `getTrialPackage()` (bukan hardcoded 3 hari)
+  - Subscription trial terhubung ke `packageId`
+- **File:** `src/services/email.service.js`
+  - `sendTrialEmail()` menerima parameter `trialDays`, dinamis di subject/body
+- **File:** `web/trial.html`
+  - Semua teks durasi pakai `id` attribute, diisi via JS
+- **File:** `web/trial.js`
+  - Fetch `/api/config` saat load, update semua teks durasi + title halaman
+- **File:** `web/index.html`
+  - Hero button "Coba Gratis X Hari" diupdate dari config API
+
+## 3. Validasi Email & ChatId untuk Free Trial
+- **File:** `src/controllers/trial.controller.js`
+  - 1 email hanya bisa 1 subscription (apa pun jenisnya) — jika sudah punya subscription, tolak
+- **File:** `src/services/subscription.service.js` — `redeemCode()`
+  - 1 akun Telegram hanya bisa 1 subscription aktif (cek `expiresAt > now`)
+  - Jika subscription sudah expired, user boleh redeem code baru
+
+## 4. Payment Flow: Trial → Basic (tidak extend, buat baru)
+- **File:** `src/services/payment.service.js`
+  - Jika user sudah punya subscription (termasuk trial aktif), tetap buat subscription baru (`status: PENDING`)
+  - User mendapat redeem code baru via email untuk paket basic
+  - Tidak lagi extend subscription trial yang sedang aktif
+- **File:** `src/services/subscription.service.js` — `redeemCode()`
+  - Saat redeem basic, nonaktifkan subscription lain yang masih ACTIVE via `updateMany({ status: 'CANCELLED' })`
+  - Prioritas subscription: cari `findActiveSubscription()` (ACTIVE + belum expired, urut terbaru)
+  - `checkAccess()` pakai query eksplisit (findActiveSubscription, findPendingSubscription), bukan `include: { subscription: true }`
+- **File:** `src/services/subscription.service.js` — `checkAccess()`
+  - Cari subscription PENDING terbaru dulu (needsRedeem)
+  - Cari subscription ACTIVE terbaru (access granted)
+- **File:** `src/controllers/payment.controller.js`, `src/controllers/sandbox.controller.js`
+  - Cari subscription terbaru secara eksplisit (bukan `include: { subscription: true }`)
+
+## 5. Budget: Fix Duplicate Data + Per Hari / Per Bulan
+- **File:** `src/services/budget.service.js` (full rewrite of relevant parts)
+  - **Bug fix:** AES-256-GCM non-deterministic → `findFirst` dengan encrypted value tidak pernah match
+  - Solusi: `findExistingBudget()` decrypt semua budget user dan bandingkan dalam plaintext
+  - **Fitur baru:** Budget per hari / per minggu / per bulan
+    - `getCurrentPeriodKey(period)` — return `YYYY-MM-DD` (hari), `YYYY-MM-DD` (Senin) untuk minggu, `YYYY-MM` (bulan)
+    - `setBudget(userId, category, amount, period)` — parameter period baru
+    - `checkBudget()` — tampilkan budget harian dan bulanan terpisah
+    - `parsePeriod(input)` — deteksi alias: per hari, harian, /hari, per bulan, bulanan, dll
+- **File:** `src/services/message.handler.js`
+  - Literal handler `set budget`: parse alias period dari input
+  - AI intent handler `set_budget`: parse alias period dari input
+  - Contoh command: `set budget makanan 50000 per hari`, `set transport 200000 /bulan`
+
+## File Baru
+- `src/controllers/config.controller.js`
+- `src/routes/config.routes.js`
+
+## Migration Baru
+- `prisma/migrations/20260713100000_add_free_trial_fields/`
+
+## Env Variable Baru
+- `TELEGRAM_BOT_USERNAME` — username bot Telegram (tanpa @)

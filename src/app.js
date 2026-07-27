@@ -14,6 +14,7 @@ const configRoutes = require('./routes/config.routes');
 const app = express();
 
 app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // Swagger UI - docs di http://localhost:3000/api-docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
