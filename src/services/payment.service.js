@@ -192,6 +192,11 @@ async function handleWebhook(body, receivedSignature) {
 
   // status_code: 1 = success, 0 = pending, -2 = expired
   if (statusCode === 1) {
+    if (payment.status === 'PAID') {
+      logger.info({ externalId: referenceId }, 'Payment sudah PAID, skip proses duplikat');
+      return { success: true };
+    }
+
     await prisma.payment.update({
       where: { id: payment.id },
       data: {
@@ -235,15 +240,31 @@ async function handleWebhook(body, receivedSignature) {
     }
 
     const now = new Date();
-    await prisma.subscription.create({
-      data: {
-        userId: user.id,
-        plan: planSlug,
-        redeemCode,
-        status: 'PENDING',
-        expiresAt: new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000),
-      },
-    });
+    const expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+    const existingSub = await prisma.subscription.findUnique({ where: { userId: user.id } });
+
+    if (existingSub) {
+      await prisma.subscription.update({
+        where: { userId: user.id },
+        data: {
+          plan: planSlug,
+          redeemCode,
+          status: 'PENDING',
+          expiresAt,
+        },
+      });
+    } else {
+      await prisma.subscription.create({
+        data: {
+          userId: user.id,
+          plan: planSlug,
+          redeemCode,
+          status: 'PENDING',
+          expiresAt,
+        },
+      });
+    }
 
     try {
       await sendRedeemEmail({
