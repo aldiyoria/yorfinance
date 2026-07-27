@@ -212,52 +212,46 @@ async function handleWebhook(body, receivedSignature) {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { subscriptions: true },
     });
 
     if (!user) {
       logger.warn({ userId }, 'User tidak ditemukan untuk callback ini');
-      return { success: false, error: 'User not found' };
+      return { success: true };
     }
 
-    const descMatch = payment.description?.match(/^YorFinance (\w+) —/);
-    const planSlug = descMatch ? descMatch[1] : 'basic';
-    let durationDays = 30;
     try {
-      const pkg = await packageService.getPackageBySlug(planSlug);
-      if (pkg) durationDays = pkg.durationDays;
-    } catch (_) {}
+      const descMatch = payment.description?.match(/^YorFinance (\w+) —/);
+      const planSlug = descMatch ? descMatch[1] : 'basic';
+      let durationDays = 30;
+      try {
+        const pkg = await packageService.getPackageBySlug(planSlug);
+        if (pkg) durationDays = pkg.durationDays;
+      } catch (_) {}
 
-    const { generateRedeemCode } = require('./subscription.service');
-    let redeemCode = generateRedeemCode();
+      const { generateRedeemCode } = require('./subscription.service');
+      let redeemCode = generateRedeemCode();
 
-    let attempts = 0;
-    while (attempts < 10) {
-      const existing = await prisma.subscription.findUnique({ where: { redeemCode } });
-      if (!existing) break;
-      redeemCode = generateRedeemCode();
-      attempts++;
-    }
+      let attempts = 0;
+      while (attempts < 10) {
+        const existing = await prisma.subscription.findUnique({ where: { redeemCode } });
+        if (!existing) break;
+        redeemCode = generateRedeemCode();
+        attempts++;
+      }
 
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
-    const existingSub = await prisma.subscription.findFirst({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (existingSub) {
-      await prisma.subscription.update({
-        where: { id: existingSub.id },
-        data: {
-          plan: planSlug,
-          redeemCode,
-          status: 'PENDING',
-          expiresAt,
+      // Nonaktifkan subscription lama (trial/pending/active) milik user ini
+      await prisma.subscription.updateMany({
+        where: {
+          userId: user.id,
+          status: { in: ['PENDING', 'ACTIVE'] },
         },
+        data: { status: 'CANCELLED' },
       });
-    } else {
+
+      // Selalu buat subscription baru untuk setiap pembayaran
       await prisma.subscription.create({
         data: {
           userId: user.id,
@@ -267,20 +261,30 @@ async function handleWebhook(body, receivedSignature) {
           expiresAt,
         },
       });
-    }
 
-    try {
-      await sendRedeemEmail({
-        to: user.email,
-        name: user.name,
-        redeemCode,
-        plan: planSlug,
-      });
-      logger.info({ email: user.email, redeemCode }, 'Redeem code dikirim via email');
+      logger.info({ userId, planSlug, redeemCode }, 'Subscription baru dibuat dari payment');
+
+      // Kirim email — gagal email bukan alasan return error
+      try {
+        await sendRedeemEmail({
+          to: user.email,
+          name: user.name,
+          redeemCode,
+          plan: planSlug,
+        });
+        logger.info({ email: user.email, redeemCode }, 'Redeem code dikirim via email');
+      } catch (err) {
+        logger.error({ err, email: user.email, redeemCode }, 'Gagal kirim email redeem code');
+      }
     } catch (err) {
-      logger.error({ err, email: user.email }, 'Gagal kirim email redeem code');
+      logger.error({ err, referenceId, userId }, 'Gagal proses subscription dari callback');
     }
   } else if (statusCode === -2) {
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: { status: 'EXPIRED' },
+    });
+  }
     await prisma.payment.update({
       where: { id: payment.id },
       data: { status: 'EXPIRED' },

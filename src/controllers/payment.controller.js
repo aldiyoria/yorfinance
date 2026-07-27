@@ -105,7 +105,6 @@ async function paymentCallback(req, res) {
 
     if (!result.success) {
       logger.warn({ error: result.error, referenceId: body.reference_id }, 'iPaymu callback ditolak');
-      return res.status(400).json({ error: result.error });
     }
 
     return res.status(200).json({ status: 'ok' });
