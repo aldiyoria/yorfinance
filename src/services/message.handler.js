@@ -341,7 +341,14 @@ async function handleIncomingMessage({ chatId, text, media }) {
     const { active, user, needsRedeem, subscription: sub } = await checkAccess(chatId);
     if (!user) return NOT_SUBSCRIBED_MSG;
     if (needsRedeem) return 'Status: *Menunggu Redeem*\n\nMasukkan redeem code Anda untuk mengaktifkan.';
-    if (!active) return EXPIRED_MSG;
+  if (!active) {
+    if (!media && REDEEM_CODE_REGEX.test(trimmed.toUpperCase())) {
+      const result = await redeemCode(chatId, trimmed.toUpperCase());
+      if (result.success) return result.message + '\n\nKetik /help untuk lihat semua perintah.';
+      return result.message + '\n\n' + EXPIRED_MSG;
+    }
+    return EXPIRED_MSG;
+  }
 
     const expiresAt = new Date(sub.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     return (
