@@ -37,7 +37,7 @@ async function main() {
       continue;
     }
 
-    const existingSub = await prisma.subscription.findUnique({
+    const existingSub = await prisma.subscription.findFirst({
       where: { userId: payment.user.id },
     });
 
