@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kontak — YorFinance</title>
+  <meta name="description" content="Hubungi tim YorFinance untuk pertanyaan, bantuan, atau masukan seputar layanan pencatatan keuangan via Telegram.">
+  <link rel="icon" type="image/png" href="/public/asset/img/logo.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .page-header {
+      padding: 120px 0 40px;
+      text-align: center;
+      background: linear-gradient(180deg, #F0F6FF 0%, var(--bg) 100%);
+    }
+    .page-header h1 {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .page-header p {
+      font-size: 17px;
+      color: var(--text-secondary);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .contact-content {
+      padding: 60px 0 100px;
+    }
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto 48px;
+    }
+    .contact-card {
+      text-align: center;
+      padding: 36px 28px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: white;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .contact-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .contact-card-icon {
+      font-size: 40px;
+      margin-bottom: 16px;
+    }
+    .contact-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .contact-card p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .contact-card a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--primary);
+      transition: color 0.2s;
+    }
+    .contact-card a:hover {
+      color: var(--primary-dark);
+    }
+    .contact-faq {
+      max-width: 720px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .contact-faq h2 {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .contact-faq p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+    @media (max-width: 640px) {
+      .contact-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="logo">
+        <span class="logo-icon">&#9670;</span> YorFinance
+      </a>
+      <a href="index.html" class="btn btn-ghost btn-sm">Kembali</a>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <section class="page-header">
+    <div class="container">
+      <span class="badge">Dukungan</span>
+      <h1>Hubungi Kami</h1>
+      <p>Punya pertanyaan, kendala, atau masukan? Kami siap membantu Anda.</p>
+    </div>
+  </section>
+
+  <!-- Contact Options -->
+  <section class="contact-content">
+    <div class="container">
+
+      <div class="contact-grid">
+
+        <div class="contact-card">
+          <div class="contact-card-icon">&#9993;</div>
+          <h3>Email</h3>
+          <p>Untuk pertanyaan umum, kendala teknis, atau pengajuan refund.</p>
+          <a href="mailto:yoriaditya17@gmail.com">yoriaditya17@gmail.com</a>
+        </div>
+
+        <div class="contact-card">
+          <div class="contact-card-icon">&#128172;</div>
+          <h3>Telegram Bot</h3>
+          <p>Kirim pesan langsung ke bot kami untuk bantuan cepat.</p>
+          <a href="https://t.me/YorFinanceBot" target="_blank" id="contact-bot-link">@YorFinanceBot</a>
+        </div>
+
+        <div class="contact-card">
+          <div class="contact-card-icon">&#128221;</div>
+          <h3>Status Pembayaran</h3>
+          <p>Cek status pembayaran atau riwayat transaksi Anda.</p>
+          <a href="history.html">Cek Status</a>
+        </div>
+
+      </div>
+
+      <!-- FAQ redirect -->
+      <div class="contact-faq">
+        <h2>Pertanyaan yang Sering Diajukan</h2>
+        <p>Sebelum menghubungi kami, mungkin jawaban atas pertanyaan Anda sudah tersedia di halaman FAQ.</p>
+        <a href="faq.html" class="btn btn-primary btn-lg">Lihat FAQ</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="logo">
+            <span class="logo-icon">&#9670;</span> YorFinance
+          </a>
+          <p>Bot Telegram pintar untuk mencatat keuangan pribadi secara otomatis.</p>
+        </div>
+        <div class="footer-links">
+          <h4>Produk</h4>
+          <ul>
+            <li><a href="index.html#features">Fitur</a></li>
+            <li><a href="index.html#pricing">Harga</a></li>
+            <li><a href="index.html#how">Cara Kerja</a></li>
+          </ul>
+        </div>
+        <div class="footer-links">
+          <h4>Dukungan</h4>
+          <ul>
+            <li><a href="faq.html">FAQ</a></li>
+            <li><a href="refund.html">Kebijakan Refund</a></li>
+            <li><a href="terms.html">Syarat & Ketentuan</a></li>
+            <li><a href="contact.html">Kontak</a></li>
+            <li><a href="history.html">Status Pembayaran</a></li>
+            <li><a href="https://t.me/YorFinanceBot" target="_blank">Telegram Bot</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 YorFinance. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+  (async function() {
+    try {
+      const res = await fetch('/api/config');
+      if (!res.ok) return;
+      const cfg = await res.json();
+      const botLink = document.getElementById('contact-bot-link');
+      if (botLink) { botLink.textContent = '@' + cfg.botUsername; botLink.href = cfg.botLink; }
+    } catch (_) {}
+  })();
+  </script>
+
+</body>
+</html>

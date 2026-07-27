@@ -38,11 +38,11 @@ const env = {
     from: process.env.SMTP_FROM || 'YorFinance <noreply@yorfinance.com>',
   },
 
-  doku: {
-    clientId: process.env.DOKU_CLIENT_ID || '',
-    secretKey: process.env.DOKU_SECRET_KEY || '',
-    apiUrl: process.env.DOKU_API_URL || 'https://api-sandbox.doku.com',
-    callbackUrl: process.env.DOKU_CALLBACK_URL || 'http://localhost:3000/api/payments/callback',
+  ipaymu: {
+    va: process.env.IPAYMU_VA || '',
+    apiKey: process.env.IPAYMU_API_KEY || '',
+    apiUrl: process.env.IPAYMU_API_URL || 'https://sandbox.ipaymu.com',
+    callbackUrl: process.env.IPAYMU_CALLBACK_URL || 'http://localhost:3000/api/payments/callback',
   },
 
   dashboardBaseUrl: process.env.DASHBOARD_BASE_URL || 'http://localhost:3000',

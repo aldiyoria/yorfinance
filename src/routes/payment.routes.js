@@ -8,7 +8,7 @@ const router = Router();
  * @swagger
  * /api/payments/create:
  *   post:
- *     summary: Buat DOKU Checkout untuk pembayaran
+ *     summary: Buat iPaymu Redirect Payment untuk pembayaran
  *     tags: [Payments]
  *     requestBody:
  *       required: true
@@ -34,7 +34,7 @@ router.post('/create', createInvoice);
  * @swagger
  * /api/payments/callback:
  *   post:
- *     summary: HTTP Notification dari DOKU
+ *     summary: Callback notification dari iPaymu
  *     tags: [Payments]
  *     responses:
  *       200:

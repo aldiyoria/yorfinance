@@ -1,12 +1,12 @@
 const { prisma } = require('../db/prisma');
-const { handleWebhook, generateSignature } = require('../services/payment.service');
-const env = require('../config/env');
+const { handleWebhook, generateCallbackSignature } = require('../services/payment.service');
 const logger = require('../utils/logger');
 
 /**
  * POST /api/sandbox/payment-callback
  * Body: { externalId, status? }
- * Simulate DOKU notification tanpa perlu DOKU real.
+ * Simulate iPaymu callback tanpa perlu iPaymu real.
+ * status_code: 1 = success, 0 = pending, -2 = expired
  */
 async function simulatePaymentCallback(req, res) {
   try {
@@ -24,42 +24,62 @@ async function simulatePaymentCallback(req, res) {
       return res.status(404).json({ error: 'Payment tidak ditemukan. Buat checkout dulu via /api/payments/create.' });
     }
 
+    const statusMap = {
+      'SUCCESS': 1,
+      'success': 1,
+      'FAILED': -2,
+      'failed': -2,
+      'PENDING': 0,
+      'pending': 0,
+    };
+    const statusCode = statusMap[status] !== undefined ? statusMap[status] : 1;
+
     const fakeBody = {
-      service: { id: 'VIRTUAL_ACCOUNT' },
-      acquirer: { id: 'BCA' },
-      channel: { id: 'VIRTUAL_ACCOUNT_BCA' },
-      order: {
-        invoice_number: externalId,
-        amount: payment.amount,
-      },
-      transaction: {
-        status: status || 'SUCCESS',
-        date: new Date().toISOString(),
-        original_request_id: payment.invoiceId || `sandbox-${Date.now()}`,
-      },
+      buyer_email: payment.description?.split(' — ')[1] || 'test@email.com',
+      buyer_name: 'Sandbox User',
+      buyer_phone: '08123456789',
+      created_at: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      expired_at: new Date(Date.now() + 3600000).toISOString().replace('T', ' ').slice(0, 19),
+      fee: '0',
+      paid_at: statusCode === 1 ? new Date().toISOString().replace('T', ' ').slice(0, 19) : '',
+      reference_id: externalId,
+      sid: `SANDBOX-${Date.now()}`,
+      status: statusCode === 1 ? 'berhasil' : statusCode === 0 ? 'pending' : 'expired',
+      status_code: String(statusCode),
+      status_desc: statusCode === 1 ? 'Success' : statusCode === 0 ? 'Pending' : 'Expired',
+      channel: 'bca',
+      paid_off: payment.amount,
+      product: 'YorFinance sandbox',
+      quantity: '1',
+      merchant: '0000000000000',
+      merchant_name: 'YorFinance Sandbox',
+      system_notes: 'Sandbox simulation',
+      trscode: `SBX${Date.now()}`,
+      trx_id: Math.floor(Math.random() * 100000000),
+      unique_code: '0',
+      via: 'va',
+      payment_no: '1234567890',
+      va: '1234567890',
+      url: '',
+      additional_info: [],
+      transaction_status_code: String(statusCode),
+      settlement_status: 'unsettle',
+      settlement_date: '',
+      expired_time: '3600',
+      expired_unix: String(Math.floor(Date.now() / 1000) + 3600),
+      is_escrow: '0',
+      is_refund: '0',
+      is_sandbox: 'true',
+      total: String(payment.amount),
+      amount: String(payment.amount),
+      sub_total: String(payment.amount),
     };
 
-    const fakeHeaders = {
-      'client-id': env.doku.clientId,
-      'request-id': require('crypto').randomUUID(),
-      'request-timestamp': new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-      'signature': '',
-    };
+    const signature = generateCallbackSignature(fakeBody);
 
-    const notificationPath = '/api/payments/callback';
-    const computedSignature = generateSignature({
-      clientId: env.doku.clientId,
-      requestId: fakeHeaders['request-id'],
-      requestTimestamp: fakeHeaders['request-timestamp'],
-      requestTarget: notificationPath,
-      body: fakeBody,
-      secretKey: env.doku.secretKey,
-    });
-    fakeHeaders['signature'] = computedSignature;
+    logger.info({ externalId, statusCode }, 'SANDBOX: Simulating iPaymu callback');
 
-    logger.info({ externalId, status: fakeBody.transaction.status }, 'SANDBOX: Simulating DOKU notification');
-
-    const result = await handleWebhook(fakeHeaders, fakeBody, notificationPath);
+    const result = await handleWebhook(fakeBody, signature);
 
     if (!result.success) {
       return res.status(400).json({ error: result.error });
@@ -70,7 +90,6 @@ async function simulatePaymentCallback(req, res) {
       include: { user: true },
     });
 
-    // Cari subscription terbaru milik user
     let sub = null;
     if (updatedPayment.user) {
       const subs = await prisma.subscription.findMany({
@@ -82,7 +101,7 @@ async function simulatePaymentCallback(req, res) {
     }
 
     return res.json({
-      message: `Sandbox notification berhasil! Status: ${fakeBody.transaction.status}`,
+      message: `Sandbox callback berhasil! Status: ${fakeBody.status} (code: ${statusCode})`,
       payment: {
         id: updatedPayment.id,
         externalId: updatedPayment.externalId,
@@ -98,8 +117,8 @@ async function simulatePaymentCallback(req, res) {
       } : null,
     });
   } catch (err) {
-    logger.error({ err }, 'SANDBOX: Error simulasi notification');
-    return res.status(500).json({ error: 'Gagal simulasi notification', detail: err.message });
+    logger.error({ err }, 'SANDBOX: Error simulasi callback');
+    return res.status(500).json({ error: 'Gagal simulasi callback', detail: err.message });
   }
 }
 
@@ -125,7 +144,6 @@ async function resetUser(req, res) {
       return res.status(404).json({ error: 'User tidak ditemukan.' });
     }
 
-    // Hapus payments, subscription, lalu user
     await prisma.payment.deleteMany({ where: { userId: user.id } });
     if (user.subscription) {
       await prisma.subscription.delete({ where: { userId: user.id } });

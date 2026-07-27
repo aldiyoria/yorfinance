@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQ — YorFinance</title>
+  <meta name="description" content="Pertanyaan umum seputar YorFinance, bot Telegram pencatat keuangan pribadi otomatis.">
+  <link rel="icon" type="image/png" href="/public/asset/img/logo.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .page-header {
+      padding: 120px 0 40px;
+      text-align: center;
+      background: linear-gradient(180deg, #F0F6FF 0%, var(--bg) 100%);
+    }
+    .page-header h1 {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .page-header p {
+      font-size: 17px;
+      color: var(--text-secondary);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .page-content {
+      padding: 60px 0 100px;
+    }
+    .page-content .faq-list {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .faq-category {
+      margin-bottom: 32px;
+    }
+    .faq-category h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--primary-light);
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="logo">
+        <span class="logo-icon">&#9670;</span> YorFinance
+      </a>
+      <a href="index.html" class="btn btn-ghost btn-sm">Kembali</a>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <section class="page-header">
+    <div class="container">
+      <span class="badge">FAQ</span>
+      <h1>Pertanyaan Umum</h1>
+      <p>Temukan jawaban atas pertanyaan yang sering ditanyakan seputar YorFinance.</p>
+    </div>
+  </section>
+
+  <!-- FAQ Content -->
+  <section class="page-content">
+    <div class="container">
+      <div class="faq-list">
+
+        <!-- Umum -->
+        <div class="faq-category">
+          <h2>Umum</h2>
+          <details class="faq-item" open>
+            <summary>Apa itu YorFinance?</summary>
+            <p>YorFinance adalah bot Telegram yang membantu Anda mencatat pemasukan dan pengeluaran pribadi secara otomatis. Cukup kirim pesan teks atau foto struk belanja, data Anda akan langsung tercatat aman dan terenkripsi.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Apakah YorFinance gratis?</summary>
+            <p>YorFinance menawarkan masa percobaan gratis selama beberapa hari. Setelah itu, Anda dapat memilih paket berlangganan yang sesuai dengan kebutuhan Anda. Lihat halaman <a href="index.html#pricing" style="color:var(--primary);font-weight:600;">Harga</a> untuk detail lengkap.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Siapa yang cocok menggunakan YorFinance?</summary>
+            <p>YorFinance cocok untuk siapa saja yang ingin mencatat keuangan pribadi tanpa ribet — mulai dari karyawan, freelancer, mahasiswa, hingga UMKM. Tidak perlu keahlian teknis, cukup chat seperti biasa di Telegram.</p>
+          </details>
+        </div>
+
+        <!-- Keamanan & Privasi -->
+        <div class="faq-category">
+          <h2>Keamanan & Privasi</h2>
+          <details class="faq-item">
+            <summary>Apakah data saya aman?</summary>
+            <p>Ya. Semua data transaksi Anda terenkripsi menggunakan AES-256 — standar enkripsi yang sama yang digunakan oleh bank dan institusi keuangan. Hanya Anda yang bisa membaca data transaksi Anda sendiri.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Apakah YorFinance bisa membaca data saya?</summary>
+            <p>Tidak. Data transaksi Anda dienkripsi sebelum disimpan di server kami. Kami tidak memiliki akses untuk membaca isi transaksi Anda. Enkripsi hanya bisa di-decrypt dengan perangkat Anda.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Apakah data saya dijual ke pihak ketiga?</summary>
+            <p>Tidak. Kami tidak menjual, menyewakan, atau membagikan data Anda kepada pihak ketiga mana pun. Privasi Anda adalah prioritas utama kami.</p>
+          </details>
+        </div>
+
+        <!-- Fitur & Cara Pakai -->
+        <div class="faq-category">
+          <h2>Fitur & Cara Pakai</h2>
+          <details class="faq-item">
+            <summary>Apakah perlu install aplikasi?</summary>
+            <p>Tidak. YorFinance berjalan di Telegram yang sudah terinstall di HP Anda. Cukup cari bot kami di Telegram, kirim <code>/start</code>, masukkan redeem code, dan mulai mencatat.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Bagaimana cara mencatat transaksi?</summary>
+            <p>Cukup kirim pesan seperti <code>beli kopi 25rb</code> atau <code>gaji masuk 8jt</code>. Bot akan otomatis mengenali jenis transaksi, nominal, dan mengkategorikannya.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Bagaimana cara kerja foto struk?</summary>
+            <p>Kirim foto struk atau nota belanja ke bot. AI kami akan membaca dan mengekstrak informasi seperti nominal, nama item, dan kategorinya secara otomatis.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Perintah apa saja yang tersedia?</summary>
+            <p>Beberapa perintah yang bisa digunakan:<br>
+            • <code>/rekap</code> — Rekap keuangan bulanan<br>
+            • <code>/hari</code> — Rekap transaksi hari ini<br>
+            • <code>/budget</code> — Cek status budget<br>
+            • <code>set budget [kategori] [nominal]</code> — Atur budget<br>
+            • <code>link</code> — Dapatkan link dashboard</p>
+          </details>
+          <details class="faq-item">
+            <summary>Apakah bisa digunakan di grup Telegram?</summary>
+            <p>Saat ini YorFinance dirancang untuk digunakan dalam percakapan pribadi (direct message) dengan bot agar data Anda tetap privat dan aman.</p>
+          </details>
+        </div>
+
+        <!-- Pembayaran & Berlangganan -->
+        <div class="faq-category">
+          <h2>Pembayaran & Berlangganan</h2>
+          <details class="faq-item">
+            <summary>Metode pembayaran apa yang diterima?</summary>
+            <p>Kami menerima pembayaran melalui payment gateway yang mendukung berbagai metode: kartu kredit/debit, bank transfer, virtual account, e-wallet, dan QRIS.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Bagaimana cara mendapatkan kode redeem?</summary>
+            <p>Setelah pembayaran berhasil, kode redeem akan dikirim ke email yang Anda masukkan saat checkout. Masukkan kode tersebut di bot Telegram untuk mengaktifkan langganan Anda.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Berlangganan saya habis, apakah data hilang?</summary>
+            <p>Data transaksi Anda tetap tersimpan di sistem kami. Ketika Anda berlangganan kembali, semua data historis Anda akan tetap tersedia.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Apakah ada batasan jumlah transaksi?</summary>
+            <p>Tidak ada batasan. Anda bisa mencatat transaksi sepuasnya tanpa batas jumlah transaksi per bulan.</p>
+          </details>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="faq-category">
+          <h2>Dashboard</h2>
+          <details class="faq-item">
+            <summary>Apa itu dashboard?</summary>
+            <p>Dashboard adalah halaman web interaktif yang menampilkan ringkasan keuangan Anda dalam bentuk grafik dan tabel. Anda bisa melihat total pemasukan, pengeluaran, serta breakdown per kategori.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Bagaimana cara mengakses dashboard?</summary>
+            <p>Ketik <code>link</code> di chat bot Telegram. Bot akan memberikan link unik ke dashboard Anda. Buka link tersebut di browser untuk melihat data keuangan secara visual.</p>
+          </details>
+        </div>
+
+        <!-- Bantuan -->
+        <div class="faq-category">
+          <h2>Bantuan & Dukungan</h2>
+          <details class="faq-item">
+            <summary>Saya punya pertanyaan atau kendala, bagaimana menghubungi support?</summary>
+            <p>Anda bisa menghubungi kami melalui:<br>
+            • Email: <a href="mailto:yoriaditya17@gmail.com" style="color:var(--primary);font-weight:600;">yoriaditya17@gmail.com</a><br>
+            • Telegram Bot langsung<br>
+            • Halaman <a href="contact.html" style="color:var(--primary);font-weight:600;">Kontak</a></p>
+          </details>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="logo">
+            <span class="logo-icon">&#9670;</span> YorFinance
+          </a>
+          <p>Bot Telegram pintar untuk mencatat keuangan pribadi secara otomatis.</p>
+        </div>
+        <div class="footer-links">
+          <h4>Produk</h4>
+          <ul>
+            <li><a href="index.html#features">Fitur</a></li>
+            <li><a href="index.html#pricing">Harga</a></li>
+            <li><a href="index.html#how">Cara Kerja</a></li>
+          </ul>
+        </div>
+        <div class="footer-links">
+          <h4>Dukungan</h4>
+          <ul>
+            <li><a href="faq.html">FAQ</a></li>
+            <li><a href="refund.html">Kebijakan Refund</a></li>
+            <li><a href="terms.html">Syarat & Ketentuan</a></li>
+            <li><a href="contact.html">Kontak</a></li>
+            <li><a href="history.html">Status Pembayaran</a></li>
+            <li><a href="https://t.me/YorFinanceBot" target="_blank">Telegram Bot</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 YorFinance. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

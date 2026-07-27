@@ -5,8 +5,8 @@ const logger = require('../utils/logger');
 
 /**
  * POST /api/payments/create
- * Body: { email, name?, packageId? }
- * Buat DOKU Checkout → return payment URL untuk pembayaran.
+ * Body: { email, name?, packageId?, plan? }
+ * Buat iPaymu Redirect Payment → return payment URL untuk pembayaran.
  */
 async function createInvoice(req, res) {
   try {
@@ -16,7 +16,6 @@ async function createInvoice(req, res) {
       return res.status(400).json({ error: 'Field "email" wajib diisi.' });
     }
 
-    // Resolve package
     let pkg = null;
     if (packageId) {
       pkg = await packageService.getPackageById(packageId);
@@ -24,11 +23,9 @@ async function createInvoice(req, res) {
         return res.status(400).json({ error: 'Paket tidak valid atau tidak aktif.' });
       }
     } else {
-      // Default to first active package (fallback for legacy calls)
       const slug = plan || 'basic';
       pkg = await packageService.getPackageBySlug(slug);
       if (!pkg || !pkg.isActive) {
-        // Fallback hardcoded
         pkg = { slug: 'basic', name: 'Basic', price: 29000, durationDays: 30 };
       }
     }
@@ -75,13 +72,25 @@ async function createInvoice(req, res) {
 
 /**
  * POST /api/payments/callback
- * HTTP Notification dari DOKU.
+ * Callback notification dari iPaymu.
+ * iPaymu mengirim body sebagai application/x-www-form-urlencoded atau application/json.
+ * Signature dikirim di header X-Signature.
  */
 async function paymentCallback(req, res) {
   try {
-    const notificationPath = '/api/payments/callback';
+    const receivedSignature = req.headers['x-signature'];
 
-    const result = await handleWebhook(req.headers, req.body, notificationPath);
+    if (!receivedSignature) {
+      return res.status(400).json({ error: 'Missing X-Signature header' });
+    }
+
+    // iPaymu bisa mengirim form-encoded atau JSON
+    let body = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch (_) {}
+    }
+
+    const result = await handleWebhook(body, receivedSignature);
 
     if (!result.success) {
       return res.status(400).json({ error: result.error });
@@ -89,7 +98,7 @@ async function paymentCallback(req, res) {
 
     return res.status(200).json({ status: 'ok' });
   } catch (err) {
-    logger.error({ err }, 'DOKU notification error');
+    logger.error({ err }, 'iPaymu callback error');
     return res.status(500).json({ error: 'Internal error' });
   }
 }
@@ -111,7 +120,6 @@ async function getPaymentStatus(req, res) {
       return res.status(404).json({ error: 'Payment tidak ditemukan.' });
     }
 
-    // Cari subscription terbaru milik user
     let sub = null;
     if (payment.user) {
       const subs = await prisma.subscription.findMany({

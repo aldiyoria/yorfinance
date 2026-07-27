@@ -7,9 +7,9 @@ const router = Router();
  * @swagger
  * /api/sandbox/payment-callback:
  *   post:
- *     summary: "[SANDBOX] Simulate DOKU payment notification"
+ *     summary: "[SANDBOX] Simulate iPaymu payment callback"
  *     description: |
- *       Simulate notification dari DOKU. Gunakan endpoint ini untuk testing flow pembayaran tanpa perlu DOKU real.
+ *       Simulate callback dari iPaymu. Gunakan endpoint ini untuk testing flow pembayaran tanpa perlu iPaymu real.
  *
  *       **Cara pakai:**
  *       1. Buat checkout via `POST /api/payments/create`
