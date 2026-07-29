@@ -77,6 +77,35 @@
     .contact-card a:hover {
       color: var(--primary-dark);
     }
+    .address-line {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text-secondary);
+    }
+    .address-label {
+      font-weight: 600;
+      color: var(--text);
+      min-width: 72px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .contact-card .address-action {
+      margin-top: 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--primary);
+      transition: color 0.2s;
+    }
+    .contact-card .address-action:hover {
+      color: var(--primary-dark);
+    }
     .contact-faq {
       max-width: 720px;
       margin: 0 auto;
@@ -145,6 +174,41 @@
           <h3>Status Pembayaran</h3>
           <p>Cek status pembayaran atau riwayat transaksi Anda.</p>
           <a href="history.html">Cek Status</a>
+        </div>
+
+        <div class="contact-card">
+          <div class="contact-card-icon">&#128242;</div>
+          <h3>WhatsApp / Telepon</h3>
+          <p>Hubungi kami via WhatsApp atau telepon untuk respon cepat.</p>
+          <a href="https://wa.me/6282116885083" target="_blank">WhatsApp</a> &middot; <a href="tel:+6282116885083">Telepon</a>
+        </div>
+
+        <div class="contact-card">
+          <div class="contact-card-icon">&#128205;</div>
+          <h3>Alamat</h3>
+          <div style="text-align:left; max-width:220px; margin:0 auto;">
+            <div class="address-line">
+              <span class="address-label">Dusun</span>
+              <span>KP PARIGI RT 002 RW 001</span>
+            </div>
+            <div class="address-line">
+              <span class="address-label">Desa</span>
+              <span>KARANGNUNGGAL</span>
+            </div>
+            <div class="address-line">
+              <span class="address-label">Kec.</span>
+              <span>CIRINTEN</span>
+            </div>
+            <div class="address-line">
+              <span class="address-label">Kab.</span>
+              <span>LEBAK</span>
+            </div>
+            <div class="address-line">
+              <span class="address-label">Prov.</span>
+              <span>BANTEN</span>
+            </div>
+          </div>
+          <a class="address-action" href="https://www.google.com/maps?q=KP+PARIGI+RT+002+RW+001+DESA+KARANGNUNGGAL+KECAMATAN+CIRINTEN+KABUPATEN+LEBAK+PROVINSI+BANTEN" target="_blank">&#128506; Buka di Google Maps</a>
         </div>
 
       </div>
